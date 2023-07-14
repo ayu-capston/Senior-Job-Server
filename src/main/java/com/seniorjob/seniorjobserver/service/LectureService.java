@@ -67,33 +67,14 @@ public class LectureService {
         return convertToDto(lectureEntity);
     }
 
-    // 강좌검색 : 제목
-    // 강좌검색 : 제목+상태
-    public List<LectureDto> searchLecturesByTitle(String title) {
-        List<LectureEntity> lectureEntities = lectureRepository.findByTitleContaining(title);
-        return lectureEntities.stream()
-                .map(this::convertToDto)
+    // 강좌필터링API
+    public List<LectureDto> filterLectures(String region, LectureEntity.LectureStatus status, String category) {
+        List<LectureEntity> lectureEntities = lectureRepository.findAll().stream()
+                .filter(lecture -> (region == null || lecture.getRegion().equals(region)) &&
+                        (status == null || lecture.getStatus() == status) &&
+                        (category == null || lecture.getCategory().equals(category)))
                 .collect(Collectors.toList());
-    }
 
-    public List<LectureDto> searchLecturesByTitleAndStatus(String title, LectureEntity.LectureStatus status) {
-        if (title != null && status != null) {
-            List<LectureEntity> lectureEntities = lectureRepository.findByTitleContainingAndStatus(title, status);
-            return lectureEntities.stream()
-                    .map(this::convertToDto)
-                    .collect(Collectors.toList());
-        } else if (title != null) {
-            return searchLecturesByTitle(title);
-        } else if (status != null) {
-            return searchLecturesByStatus(status);
-        } else {
-            return Collections.emptyList();
-        }
-    }
-
-    // 강좌상태
-    public List<LectureDto> searchLecturesByStatus(LectureEntity.LectureStatus status) {
-        List<LectureEntity> lectureEntities = lectureRepository.findByStatus(status);
         return lectureEntities.stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
