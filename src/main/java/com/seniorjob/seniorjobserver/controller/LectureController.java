@@ -67,6 +67,33 @@ public class LectureController {
 		}
 	}
 
+	// GET /api/lectures/sort/latest?descending=true
+	// GET /api/lectures/sort/latest?descending=false
+	@GetMapping("/sort/createdDate")
+	public ResponseEntity<List<LectureDto>> sortLecturesByCreatedDate(@RequestParam(value = "descending", defaultValue = "false") boolean descending) {
+		List<LectureDto> lectureList = lectureService.getAllLectures();
+		lectureList = lectureService.sortLecturesByCreatedDate(lectureList, descending);
+		return ResponseEntity.ok(lectureList);
+	}
+
+	// GET /api/lectures/sort/price?descending=true
+	// GET /api/lectures/sort/price?descending=false
+	@GetMapping("/sort/price")
+	public ResponseEntity<List<LectureDto>> sortLecturesByPrice(@RequestParam(value = "descending", defaultValue = "false") boolean descending) {
+		List<LectureDto> lectureList = lectureService.getAllLectures();
+		lectureList = lectureService.sortLecturesByPrice(lectureList, descending);
+		return ResponseEntity.ok(lectureList);
+	}
+
+	// GET /api/lectures/sort/popularity?descending=true
+	// GET /api/lectures/sort/popularity?descending=false
+	@GetMapping("/sort/popularity")
+	public ResponseEntity<List<LectureDto>> sortLecturesByPopularity(@RequestParam(value = "descending", defaultValue = "false") boolean descending) {
+		List<LectureDto> lectureList = lectureService.getAllLectures();
+		lectureList = lectureService.sortLecturesByPopularity(lectureList, descending);
+		return ResponseEntity.ok(lectureList);
+	}
+
 	// 강좌필터링검색API
 	// 강좌제목
 	// GET http://localhost:8080/api/lectures/search={title}
@@ -78,41 +105,41 @@ public class LectureController {
 	// GET /api/lectures/search?title={강좌제목}&status={상태}&descending={최신순/오래된순}&sortByPopularity={인기순/참여자적은순}
 	// 강좌제목 + 상태(모집중, 개설대기중, 마감) + 최신순(false)/오래된순(true) + 인기순(false)/참여자적은순(true) + 가격높은순(false)/낮은순(true)
 	// GET /api/lectures/search?title={강좌제목}&status={상태}&descending={최신순/오래된순}&sortByPopularity={인기순/참여자적은순}&sortLecturesByPrice{가격순}
-	@GetMapping("/search")
-	public ResponseEntity<List<LectureDto>> searchLectures(
-			@RequestParam(value = "title", required = false) String title,
-			@RequestParam(value = "status", required = false) LectureEntity.LectureStatus status,
-			@RequestParam(value = "sortByPopularity", defaultValue = "false") boolean sortByPopularity,
-			@RequestParam(value = "descending", defaultValue = "false") boolean descending,
-			@RequestParam(value = "sortByPrice", defaultValue = "false") boolean sortByPrice,
-			@RequestParam(value = "priceDescending", defaultValue = "false") boolean priceDescending) {
-
-		List<LectureDto> lectureList;
-		if (title != null && status != null) {
-			lectureList = lectureService.searchLecturesByTitleAndStatus(title, status);
-		} else if (title != null) {
-			lectureList = lectureService.searchLecturesByTitle(title);
-		} else if (status != null) {
-			lectureList = lectureService.searchLecturesByStatus(status);
-		} else {
-			return ResponseEntity.badRequest().build();
-		}
-
-		for (LectureDto lectureDto : lectureList) {
-			LectureEntity.LectureStatus lectureStatus = lectureService.getLectureStatus(lectureDto.getCreate_id());
-			lectureDto.setStatus(lectureStatus);
-		}
-
-		if (sortByPopularity) {
-			lectureList = lectureService.sortLecturesByPopularity(lectureList, descending);
-		} else if (sortByPrice) {
-			lectureList = lectureService.sortLecturesByPrice(lectureList, priceDescending);
-		} else {
-			lectureList = lectureService.sortLecturesByCreatedDate(lectureList, descending);
-		}
-
-		return ResponseEntity.ok(lectureList);
-	}
+//	@GetMapping("/search")
+//	public ResponseEntity<List<LectureDto>> searchLectures(
+//			@RequestParam(value = "title", required = false) String title,
+//			@RequestParam(value = "status", required = false) LectureEntity.LectureStatus status,
+//			@RequestParam(value = "sortByPopularity", defaultValue = "false") boolean sortByPopularity,
+//			@RequestParam(value = "descending", defaultValue = "false") boolean descending,
+//			@RequestParam(value = "sortByPrice", defaultValue = "false") boolean sortByPrice,
+//			@RequestParam(value = "priceDescending", defaultValue = "false") boolean priceDescending) {
+//
+//		List<LectureDto> lectureList;
+//		if (title != null && status != null) {
+//			lectureList = lectureService.searchLecturesByTitleAndStatus(title, status);
+//		} else if (title != null) {
+//			lectureList = lectureService.searchLecturesByTitle(title);
+//		} else if (status != null) {
+//			lectureList = lectureService.searchLecturesByStatus(status);
+//		} else {
+//			return ResponseEntity.badRequest().build();
+//		}
+//
+//		for (LectureDto lectureDto : lectureList) {
+//			LectureEntity.LectureStatus lectureStatus = lectureService.getLectureStatus(lectureDto.getCreate_id());
+//			lectureDto.setStatus(lectureStatus);
+//		}
+//
+//		if (sortByPopularity) {
+//			lectureList = lectureService.sortLecturesByPopularity(lectureList, descending);
+//		} else if (sortByPrice) {
+//			lectureList = lectureService.sortLecturesByPrice(lectureList, priceDescending);
+//		} else {
+//			lectureList = lectureService.sortLecturesByCreatedDate(lectureList, descending);
+//		}
+//
+//		return ResponseEntity.ok(lectureList);
+//	}
 
 	// 페이징
 	// GET /api/lectures/paging?page={no}&size={no}
