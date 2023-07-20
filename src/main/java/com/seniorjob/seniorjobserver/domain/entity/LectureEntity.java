@@ -93,12 +93,14 @@ public class LectureEntity extends TimeEntity {
     @CreatedDate
     private LocalDateTime createdDate;
 
+    @Column(name = "recruitEnd_date", columnDefinition = "datetime")
+    private LocalDateTime recruitEnd_date;
 
     @Builder
     public LectureEntity(Long create_id, String creator, Integer maxParticipants, Integer currentParticipants, String category,
                          String bank_name, String account_name, String account_number, Integer price, String title, String content,
                          String cycle, Integer count, LocalDateTime start_date, LocalDateTime end_date, String region, String image_url,
-                         LocalDateTime createdDate) {
+                         LocalDateTime createdDate, LocalDateTime recruitEnd_date) {
         this.create_id = create_id;
         this.creator = creator;
         this.maxParticipants = maxParticipants;
@@ -117,6 +119,7 @@ public class LectureEntity extends TimeEntity {
         this.region = region;
         this.image_url = image_url;
         this.createdDate = createdDate;
+        this.recruitEnd_date = recruitEnd_date;
     }
 
     public void increaseCurrentParticipants() {
@@ -130,6 +133,4 @@ public class LectureEntity extends TimeEntity {
             currentParticipants--;
         }
     }
-
-
 }
