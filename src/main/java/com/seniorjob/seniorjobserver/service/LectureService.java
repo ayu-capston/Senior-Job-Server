@@ -7,6 +7,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -24,8 +25,32 @@ public class LectureService {
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
     }
-
+    
     public LectureDto createLecture(LectureDto lectureDto) {
+        LocalDateTime currentDate = LocalDateTime.now();
+        LocalDateTime startDate = lectureDto.getStart_date();
+        LocalDateTime endDate = lectureDto.getEnd_date();
+        LocalDateTime recruitEndDate = lectureDto.getRecruitEnd_date();
+
+        // 시작 날짜가 현재 날짜 이전인 경우, 예외
+        if (startDate.isBefore(currentDate)) {
+            throw new IllegalArgumentException("시작 날짜는 현재 날짜 이후로 설정해야 한다.");
+        }
+
+        // 종료 날짜가 오늘 날짜 이후이고 시작 날짜 이후인 경우, 예외
+        if (endDate.isBefore(currentDate) || endDate.isBefore(startDate)) {
+            throw new IllegalArgumentException("종료 날짜는 오늘 이후의 날짜이고 시작 날짜 이후로 설정해야 한다.");
+        }
+
+        // 강좌 모집 마감 날짜가 시작 날짜 이전인 경우, 예외
+        if (recruitEndDate.isAfter(startDate)) {
+            throw new IllegalArgumentException("강좌 모집 마감 날짜는 시작 날짜 이전으로 설정해야 한다.");
+        }
+        // 강좌모집인원은 50명을 초과할수 없다. 초과할경우 예외
+        if (lectureDto.getMax_participants() > 50) {
+            throw new IllegalArgumentException("모집 인원은 50명을 초과할 수 없습니다.");
+        }
+
         LectureEntity lectureEntity = lectureDto.toEntity();
         lectureEntity.updateStatus();
         LectureEntity savedLecture = lectureRepository.save(lectureEntity);
@@ -50,6 +75,7 @@ public class LectureService {
         existingLecture.setCount(lectureDto.getCount());
         existingLecture.setStart_date(lectureDto.getStart_date());
         existingLecture.setEnd_date(lectureDto.getEnd_date());
+        existingLecture.setRecruitEnd_date(lectureDto.getRecruitEnd_date());
         existingLecture.setRegion(lectureDto.getRegion());
         existingLecture.setImage_url(lectureDto.getImage_url());
 
@@ -153,6 +179,7 @@ public class LectureService {
                 .region(lectureEntity.getRegion())
                 .image_url(lectureEntity.getImage_url())
                 .createdDate(lectureEntity.getCreatedDate())
+                .recruitEnd_date(lectureEntity.getRecruitEnd_date())
                 .build();
     }
 
