@@ -25,7 +25,7 @@ public class LectureService {
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
     }
-
+    
     public LectureDto createLecture(LectureDto lectureDto) {
         LocalDateTime currentDate = LocalDateTime.now();
         LocalDateTime startDate = lectureDto.getStart_date();
