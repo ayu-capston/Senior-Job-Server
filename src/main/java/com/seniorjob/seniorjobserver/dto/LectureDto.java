@@ -30,7 +30,8 @@ public class LectureDto {
     private LocalDateTime start_date;
     @DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm")
     private LocalDateTime end_date;
-
+    @DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm")
+    private LocalDateTime recruitEnd_date;
     private String region;
     private String image_url;
 
@@ -66,6 +67,7 @@ public class LectureDto {
                 .region(region)
                 .image_url(image_url)
                 .createdDate(createdDate)
+                .recruitEnd_date(recruitEnd_date)
                 .build();
         return lectureEntity;
     }
@@ -74,7 +76,7 @@ public class LectureDto {
     public LectureDto(Long create_id, String creator, Integer max_participants, Integer current_participants, String category,
                       String bank_name, String account_name, String account_number, Integer price, String title, String content,
                       String cycle, Integer count, LocalDateTime start_date, LocalDateTime end_date, String region, String image_url,
-                      LocalDateTime createdDate) {
+                      LocalDateTime createdDate, LocalDateTime recruitEnd_date) {
         this.create_id = create_id;
         this.creator = creator;
         this.max_participants = max_participants;
@@ -93,28 +95,6 @@ public class LectureDto {
         this.region = region;
         this.image_url = image_url;
         this.createdDate = createdDate;
-    }
-
-    private LectureDto convertToDto(LectureEntity lectureEntity) {
-        return LectureDto.builder()
-                .create_id(lectureEntity.getCreate_id())
-                .creator(lectureEntity.getCreator())
-                .max_participants(lectureEntity.getMaxParticipants())
-                .current_participants(lectureEntity.getCurrentParticipants())
-                .category(lectureEntity.getCategory())
-                .bank_name(lectureEntity.getBank_name())
-                .account_name(lectureEntity.getAccount_name())
-                .account_number(lectureEntity.getAccount_number())
-                .price(lectureEntity.getPrice())
-                .title(lectureEntity.getTitle())
-                .content(lectureEntity.getContent())
-                .cycle(lectureEntity.getCycle())
-                .count(lectureEntity.getCount())
-                .start_date(lectureEntity.getStart_date())
-                .end_date(lectureEntity.getEnd_date())
-                .region(lectureEntity.getRegion())
-                .image_url(lectureEntity.getImage_url())
-                .createdDate(lectureEntity.getCreatedDate())
-                .build();
+        this.recruitEnd_date = recruitEnd_date;
     }
 }
