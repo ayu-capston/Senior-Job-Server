@@ -86,7 +86,7 @@ public class LectureEntity extends TimeEntity {
 
     @Column(name = "status")
     @Enumerated(EnumType.STRING)
-    private LectureStatus status;
+    private LectureStatus status = LectureStatus.AVAILABLE;
 
     @Column(name = "region")
     private String region;
@@ -122,6 +122,7 @@ public class LectureEntity extends TimeEntity {
         this.start_date = start_date;
         this.end_date = end_date;
         this.region = region;
+        this.status = LectureStatus.AVAILABLE;
         this.image_url = image_url;
         this.createdDate = createdDate;
         this.recruitEnd_date = recruitEnd_date;
