@@ -95,7 +95,6 @@ public class LectureController {
 	}
 
 
-
 	// 페이징
 	// GET /api/lectures/paging?page={no}&size={no}
 	@GetMapping("/paging")

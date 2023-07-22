@@ -3,13 +3,19 @@ package com.seniorjob.seniorjobserver.service;
 import com.seniorjob.seniorjobserver.domain.entity.LectureApplyEntity;
 import com.seniorjob.seniorjobserver.domain.entity.LectureEntity;
 import com.seniorjob.seniorjobserver.domain.entity.UserEntity;
+import com.seniorjob.seniorjobserver.dto.LectureApplyDto;
 import com.seniorjob.seniorjobserver.repository.LectureApplyRepository;
 import com.seniorjob.seniorjobserver.repository.LectureRepository;
 import com.seniorjob.seniorjobserver.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class LectureApplyService {
@@ -25,7 +31,7 @@ public class LectureApplyService {
         this.lectureApplyRepository = lectureApplyRepository;
     }
 
-    public void applyForLecture(Long userId, Long lectureId) {
+    public void applyForLecture(Long userId, Long lectureId, String applyReason) {
         UserEntity user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다. id: " + userId));
 
@@ -37,16 +43,23 @@ public class LectureApplyService {
             throw new RuntimeException(lectureId + " 이미 참여하신 강좌입니다.");
         }
 
+        // 강좌신청이유 필수! 신청이유가 없을 경우 예외처리
+        if (applyReason == null || applyReason.isEmpty()) {
+            throw new IllegalArgumentException("강좌신청이유를 작성해주세요!!");
+        }
+
         // 강좌 참여 생성
         LectureApplyEntity lectureApply = LectureApplyEntity.builder()
                 .lecture(lecture)
                 .user(user)
                 .createdDate(LocalDateTime.now())
+                .applyReason(applyReason)
                 .build();
         lecture.increaseCurrentParticipants();
         lectureApplyRepository.save(lectureApply);
     }
 
+    // 강좌참여신청취소
     public String cancelLectureApply(Long userId, Long lectureId) {
         UserEntity user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
@@ -62,5 +75,4 @@ public class LectureApplyService {
 
         return "강좌 신청이 취소되었습니다.";
     }
-
 }

@@ -133,6 +133,4 @@ public class LectureEntity extends TimeEntity {
             currentParticipants--;
         }
     }
-
-
 }
