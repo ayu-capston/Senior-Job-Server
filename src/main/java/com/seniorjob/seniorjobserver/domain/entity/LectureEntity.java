@@ -15,11 +15,27 @@ import java.time.LocalDateTime;
 public class LectureEntity extends TimeEntity {
 
     public enum LectureStatus {
-        WAITING,
-        RECRUITING,
-        CLOSED,
-        NORMAL_STATUS
-        // 신청가능상태, 개설대기상태, 진행상태, 철회상태,
+        AVAILABLE,    // 신청 가능 상태
+        WAITING,      // 개설 대기 상태
+        ONGOING,      // 진행 상태
+        WITHDRAWN,    // 철회 상태
+        COMPLETED     // 완료 상태
+    }
+
+    public void updateStatus() {
+        LocalDateTime now = LocalDateTime.now();
+
+        if (now.isBefore(recruitEnd_date) && currentParticipants < maxParticipants) {
+            status = LectureStatus.AVAILABLE;
+        } else if (now.isBefore(start_date) && (now.isAfter(recruitEnd_date) || currentParticipants.equals(maxParticipants))) {
+            status = LectureStatus.WAITING;
+        } else if (now.isAfter(start_date) && now.isBefore(end_date)) {
+            status = LectureStatus.ONGOING;
+        } else if (now.isAfter(end_date)) {
+            status = LectureStatus.COMPLETED;
+        } else if (now.isAfter(recruitEnd_date) && status.equals(LectureStatus.AVAILABLE)) {
+            status = LectureStatus.WITHDRAWN;
+        }
     }
 
     @Id
@@ -71,17 +87,6 @@ public class LectureEntity extends TimeEntity {
     @Column(name = "status")
     @Enumerated(EnumType.STRING)
     private LectureStatus status;
-
-    public void updateStatus() {
-        LocalDateTime currentDate = LocalDateTime.now();
-        if (currentDate.isBefore(start_date)) {
-            status = LectureStatus.WAITING;
-        } else if (currentDate.isBefore(end_date)) {
-            status = LectureStatus.RECRUITING;
-        } else {
-            status = LectureStatus.CLOSED;
-        }
-    }
 
     @Column(name = "region")
     private String region;

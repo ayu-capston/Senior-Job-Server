@@ -75,4 +75,16 @@ public class LectureApplyService {
 
         return "강좌 신청이 취소되었습니다.";
     }
+
+    // 해당 강좌에 신청한 회원 목록 조회 메서드
+    public List<LectureApplyDto> getApplicantsForLecture(Long lectureId) {
+        LectureEntity lecture = lectureRepository.findById(lectureId)
+                .orElseThrow(() -> new RuntimeException("강좌를 찾을 수 없습니다. id: " + lectureId));
+
+        List<LectureApplyEntity> lectureApplies = lectureApplyRepository.findByLecture(lecture);
+        return lectureApplies.stream()
+                .map(LectureApplyDto::new)
+                .collect(Collectors.toList());
+    }
+
 }
