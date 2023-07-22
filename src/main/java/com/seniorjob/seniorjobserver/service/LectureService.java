@@ -3,12 +3,12 @@ package com.seniorjob.seniorjobserver.service;
 import com.seniorjob.seniorjobserver.domain.entity.LectureEntity;
 import com.seniorjob.seniorjobserver.dto.LectureDto;
 import com.seniorjob.seniorjobserver.repository.LectureRepository;
+import com.seniorjob.seniorjobserver.domain.entity.LectureEntity.LectureStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -83,6 +83,7 @@ public class LectureService {
         return convertToDto(updatedLecture);
     }
 
+    // 강좌삭제
     public void deleteLecture(Long create_id) {
         lectureRepository.deleteById(create_id);
     }
@@ -102,28 +103,20 @@ public class LectureService {
                 .collect(Collectors.toList());
     }
 
-    public List<LectureDto> searchLecturesByTitleAndStatus(String title, LectureEntity.LectureStatus status) {
-        if (title != null && status != null) {
-            List<LectureEntity> lectureEntities = lectureRepository.findByTitleContainingAndStatus(title, status);
-            return lectureEntities.stream()
-                    .map(this::convertToDto)
-                    .collect(Collectors.toList());
-        } else if (title != null) {
-            return searchLecturesByTitle(title);
-        } else if (status != null) {
-            return searchLecturesByStatus(status);
-        } else {
-            return Collections.emptyList();
-        }
-    }
-
-    // 강좌상태
-    public List<LectureDto> searchLecturesByStatus(LectureEntity.LectureStatus status) {
-        List<LectureEntity> lectureEntities = lectureRepository.findByStatus(status);
-        return lectureEntities.stream()
-                .map(this::convertToDto)
-                .collect(Collectors.toList());
-    }
+//    public List<LectureDto> searchLecturesByTitleAndStatus(String title, LectureEntity.LectureStatus status) {
+//        if (title != null && status != null) {
+//            List<LectureEntity> lectureEntities = lectureRepository.findByTitleContainingAndStatus(title, status);
+//            return lectureEntities.stream()
+//                    .map(this::convertToDto)
+//                    .collect(Collectors.toList());
+//        } else if (title != null) {
+//            return searchLecturesByTitle(title);
+//        } else if (status != null) {
+//            return searchLecturesByStatus(status);
+//        } else {
+//            return Collections.emptyList();
+//        }
+//    }
 
     // 강좌ID기반 강좌상태 가져오는 메서드
     public LectureEntity.LectureStatus getLectureStatus(Long create_id) {
@@ -186,5 +179,25 @@ public class LectureService {
     //페이징
     public Page<LectureEntity> getLectures(Pageable pageable) {
         return lectureRepository.findAll(pageable);
+    }
+
+    // 강좌상태
+    // 강좌 모집 마감 기능
+    public void closeRecruitment(Long lectureId) {
+        LectureEntity lecture = lectureRepository.findById(lectureId)
+                .orElseThrow(() -> new RuntimeException("강좌를 찾을 수 없습니다. id: " + lectureId));
+
+        // 이미 모집 마감되었거나 시작된 강좌인 경우 예외 처리
+        if (lecture.getStatus() == LectureStatus.WAITING || lecture.getStatus() == LectureStatus.ONGOING) {
+            throw new RuntimeException("이미 모집 마감되었거나 진행 중인 강좌입니다.");
+        }
+
+        LocalDateTime currentDate = LocalDateTime.now();
+        if (currentDate.isAfter(lecture.getRecruitEnd_date())) {
+            throw new RuntimeException("모집 마감일이 지났습니다. 강좌를 진행 상태로 변경할 수 없습니다.");
+        }
+
+        lecture.setStatus(LectureStatus.ONGOING); // 강좌 상태를 진행 중으로 변경
+        lectureRepository.save(lecture);
     }
 }

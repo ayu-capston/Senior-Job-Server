@@ -113,6 +113,9 @@ public class LectureController {
 		return ResponseEntity.ok(pagedLectureDto);
 	}
 
+	// 강좌 모집 마감 API
+
+
 
 	private LectureDto convertToDto(LectureEntity lectureEntity) {
 		if (lectureEntity == null)

@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Collections;
 import java.util.List;
 
 @RestController
@@ -43,6 +44,18 @@ public class LectureApplyController {
             return ResponseEntity.ok(message);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    // 해당 강좌에 신청한 회원 목록 조회 API
+    // GET /api/lectureapply/{lectureId}/applicants
+    @GetMapping("/lectureapply/{lectureId}/applicants")
+    public ResponseEntity<List<LectureApplyDto>> getApplicantsForLecture(@PathVariable Long lectureId) {
+        try {
+            List<LectureApplyDto> applicants = lectureApplyService.getApplicantsForLecture(lectureId);
+            return ResponseEntity.ok(applicants);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Collections.emptyList());
         }
     }
 }

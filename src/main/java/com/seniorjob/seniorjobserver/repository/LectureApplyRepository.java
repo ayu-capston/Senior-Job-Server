@@ -14,6 +14,6 @@ public interface LectureApplyRepository extends JpaRepository<LectureApplyEntity
 
     Optional<LectureApplyEntity> findByUserAndLecture(UserEntity user, LectureEntity lecture);
 
-    List<LectureApplyEntity> findByUser(UserEntity user);
+    List<LectureApplyEntity> findByLecture(LectureEntity lecture);
 }
 
