@@ -69,6 +69,10 @@ public class LectureDto {
                 .createdDate(createdDate)
                 .recruitEnd_date(recruitEnd_date)
                 .build();
+
+        lectureEntity.updateStatus();
+        this.status = lectureEntity.getStatus();
+
         return lectureEntity;
     }
 
@@ -76,7 +80,7 @@ public class LectureDto {
     public LectureDto(Long create_id, String creator, Integer max_participants, Integer current_participants, String category,
                       String bank_name, String account_name, String account_number, Integer price, String title, String content,
                       String cycle, Integer count, LocalDateTime start_date, LocalDateTime end_date, String region, String image_url,
-                      LocalDateTime createdDate, LocalDateTime recruitEnd_date) {
+                      LocalDateTime createdDate, LocalDateTime recruitEnd_date, LectureEntity.LectureStatus status) {
         this.create_id = create_id;
         this.creator = creator;
         this.max_participants = max_participants;
@@ -93,8 +97,11 @@ public class LectureDto {
         this.start_date = start_date;
         this.end_date = end_date;
         this.region = region;
+        this.status = status;
         this.image_url = image_url;
         this.createdDate = createdDate;
         this.recruitEnd_date = recruitEnd_date;
     }
+
+
 }

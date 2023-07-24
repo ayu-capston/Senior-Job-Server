@@ -170,6 +170,7 @@ public class LectureService {
                 .start_date(lectureEntity.getStart_date())
                 .end_date(lectureEntity.getEnd_date())
                 .region(lectureEntity.getRegion())
+                .status(lectureEntity.getStatus())
                 .image_url(lectureEntity.getImage_url())
                 .createdDate(lectureEntity.getCreatedDate())
                 .recruitEnd_date(lectureEntity.getRecruitEnd_date())

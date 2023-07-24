@@ -67,6 +67,7 @@ public class LectureController {
 		}
 	}
 
+	// 강좌최신순/오래된순 정렬
 	// GET /api/lectures/sort/latest?descending=true
 	// GET /api/lectures/sort/latest?descending=false
 	@GetMapping("/sort/createdDate")
@@ -76,6 +77,7 @@ public class LectureController {
 		return ResponseEntity.ok(lectureList);
 	}
 
+	// 강좌가격순 정렬
 	// GET /api/lectures/sort/price?descending=true
 	// GET /api/lectures/sort/price?descending=false
 	@GetMapping("/sort/price")
@@ -85,6 +87,7 @@ public class LectureController {
 		return ResponseEntity.ok(lectureList);
 	}
 
+	// 강좌 인기순 정렬
 	// GET /api/lectures/sort/popularity?descending=true
 	// GET /api/lectures/sort/popularity?descending=false
 	@GetMapping("/sort/popularity")
@@ -112,10 +115,6 @@ public class LectureController {
 
 		return ResponseEntity.ok(pagedLectureDto);
 	}
-
-	// 강좌 모집 마감 API
-
-
 
 	private LectureDto convertToDto(LectureEntity lectureEntity) {
 		if (lectureEntity == null)
