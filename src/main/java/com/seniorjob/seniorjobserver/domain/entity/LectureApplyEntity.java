@@ -24,8 +24,29 @@ public class LectureApplyEntity {
     @JoinColumn(name = "uid", referencedColumnName = "uid")
     private UserEntity user;
 
-    @Column(name = "applyReason", nullable = false)
+    @Column(name = "applyReason")
     private String applyReason;
+
+    @Column(name = "recruitment_closed")
+    private Boolean recruitmentClosed;
+
+
+    public enum LectureApplyStatus {
+        승인,
+        대기
+    }
+
+    @Column(name = "lectureapply_status")
+    @Enumerated(EnumType.STRING)
+    private LectureApplyStatus lectureApplyStatus = LectureApplyStatus.승인;
+
+    public LectureApplyStatus getLectureApplyStatus(){
+        return lectureApplyStatus;
+    }
+
+    public void setLectureApplyStatus(LectureApplyStatus lectureApplyStatus){
+        this.lectureApplyStatus = lectureApplyStatus;
+    }
 
     @Column(name = "created_date", columnDefinition = "datetime DEFAULT CURRENT_TIMESTAMP", nullable = false)
     @CreatedDate

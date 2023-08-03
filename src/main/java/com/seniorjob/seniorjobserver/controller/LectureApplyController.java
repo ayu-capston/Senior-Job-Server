@@ -50,12 +50,32 @@ public class LectureApplyController {
     // 해당 강좌에 신청한 회원 목록 조회 API
     // GET /api/lectureapply/{lectureId}/applicants
     @GetMapping("/lectureapply/{lectureId}/applicants")
-    public ResponseEntity<List<LectureApplyDto>> getApplicantsForLecture(@PathVariable Long lectureId) {
+    public ResponseEntity<List<LectureApplyDto>> getApplicantsByLectureId(@PathVariable Long lectureId) {
+        List<LectureApplyDto> applicants = lectureApplyService.getApplicantsByLectureId(lectureId);
+        return ResponseEntity.ok(applicants);
+    }
+
+    // 회원목록에서 승인이 된 회원들을 일괄 모집마감하는 API
+    // PUT /api/lectureapply/{lectureId}/close
+    @PutMapping("/lectureapply/{lectureId}/close")
+    public ResponseEntity<String> closeLectureApply(@PathVariable Long lectureId) {
         try {
-            List<LectureApplyDto> applicants = lectureApplyService.getApplicantsForLecture(lectureId);
-            return ResponseEntity.ok(applicants);
+            return lectureApplyService.closeLectureApply(lectureId);
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(Collections.emptyList());
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    // 강좌참여신청 승인 상태 개별 변경 API
+    // PUT /api/lectureapply/{userId}/status{lectureId}
+    @PutMapping("/lectureapply/{userId}/status/{lectureId}")
+    public ResponseEntity<String> updateLectureApplyStatus(@PathVariable Long userId, @PathVariable Long lectureId, @RequestParam LectureApplyEntity.LectureApplyStatus status) {
+        try {
+            lectureApplyService.updateLectureApplyStatus(userId, lectureId, status);
+            String message = String.format("강좌참여신청을 변경하였습니다. userId: %d, lectureId: %d", userId, lectureId);
+            return ResponseEntity.ok(message);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 }
