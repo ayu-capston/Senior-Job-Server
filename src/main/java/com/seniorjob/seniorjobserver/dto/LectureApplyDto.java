@@ -23,11 +23,13 @@ public class LectureApplyDto {
 
     private String userName;
     private String applyReason;
+
     private LectureApplyEntity.LectureApplyStatus lectureApplyStatus;
 
     @JsonIgnore
     private LocalDateTime createdDate;
 
+    @JsonIgnore
     private Boolean recruitmentClosed;
 
     public LectureApplyDto(LectureApplyEntity lectureApply) {
@@ -36,6 +38,7 @@ public class LectureApplyDto {
         this.createdDate = lectureApply.getCreatedDate();
         this.userName = lectureApply.getUser().getName();
         this.lectureApplyStatus = lectureApply.getLectureApplyStatus();
+        this.recruitmentClosed = lectureApply.getRecruitmentClosed();
     }
 
     public LectureApplyEntity toEntity() {
