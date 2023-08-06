@@ -20,6 +20,7 @@ public class LectureService {
     public LectureService(LectureRepository lectureRepository) {
         this.lectureRepository = lectureRepository;
     }
+
     public List<LectureDto> getAllLectures() {
         List<LectureEntity> lectureEntities = lectureRepository.findAll();
         return lectureEntities.stream()
