@@ -1,6 +1,7 @@
 package com.seniorjob.seniorjobserver.controller;
 
 import com.seniorjob.seniorjobserver.domain.entity.UserEntity;
+import com.seniorjob.seniorjobserver.dto.LectureApplyDto;
 import com.seniorjob.seniorjobserver.dto.LectureDto;
 import com.seniorjob.seniorjobserver.dto.LectureProposalDto;
 import com.seniorjob.seniorjobserver.repository.UserRepository;
@@ -8,6 +9,8 @@ import com.seniorjob.seniorjobserver.service.LectureProposalService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/lectureproposal")
@@ -40,5 +43,9 @@ public class LectureProposalController {
     }
 
     // 강좌제안 전체 목록API
-
+    // GET /api/lectureproposal/all
+    @GetMapping
+    public List<LectureProposalDto> getAllProposals() {
+        return lectureProposalService.getAllProposals();
+    }
 }

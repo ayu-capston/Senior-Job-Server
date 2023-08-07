@@ -1,5 +1,7 @@
 package com.seniorjob.seniorjobserver.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.seniorjob.seniorjobserver.domain.entity.LectureApplyEntity;
 import com.seniorjob.seniorjobserver.domain.entity.LectureEntity;
 import com.seniorjob.seniorjobserver.domain.entity.LectureProposalEntity;
 import com.seniorjob.seniorjobserver.domain.entity.UserEntity;
@@ -14,7 +16,9 @@ import java.time.LocalDateTime;
 public class LectureProposalDto {
 
     private Long proposalId;
+    @JsonIgnore
     private UserEntity user;
+    private String userName;
     private String title;
     private String category;
     private LocalDateTime startDate;
@@ -22,6 +26,7 @@ public class LectureProposalDto {
     private String region;
     private Integer price;
     private String content;
+    private Integer currentParticipants;
     private LocalDateTime createDate;
 
     public LectureProposalEntity toEntity() {
@@ -35,16 +40,32 @@ public class LectureProposalDto {
                 .region(region)
                 .price(price)
                 .content(content)
+                .currentParticipants(currentParticipants)
                 .created_date(createDate)
                 .build();
     }
 
+    public LectureProposalDto(LectureProposalEntity lectureProposal) {
+        this.proposalId = lectureProposal.getProposal_id();
+        this.userName = lectureProposal.getUser().getName();
+        this.title = lectureProposal.getTitle();
+        this.category = lectureProposal.getCategory();
+        this.startDate = lectureProposal.getStart_date();
+        this.endDate = lectureProposal.getEnd_date();
+        this.region = lectureProposal.getRegion();
+        this.price = lectureProposal.getPrice();
+        this.content = lectureProposal.getContent();
+        this.currentParticipants = lectureProposal.getCurrent_participants();
+        this.createDate = lectureProposal.getCreated_date();
+    }
+
     @Builder
-    public LectureProposalDto(Long proposalId, UserEntity user, String title,
+    public LectureProposalDto(Long proposalId, UserEntity user, String userName, String title,
                               String category, LocalDateTime startDate, LocalDateTime endDate, String region,
-                              Integer price, String content, LocalDateTime createDate){
+                              Integer price, String content, Integer currentParticipants, LocalDateTime createDate){
         this.proposalId = proposalId;
         this.user = user;
+        this.userName = userName;
         this.title = title;
         this.category = category;
         this.startDate = startDate;
@@ -52,6 +73,7 @@ public class LectureProposalDto {
         this.region = region;
         this.price = price;
         this.content = content;
+        this.currentParticipants = currentParticipants;
         this.createDate = createDate;
     }
 
@@ -59,6 +81,7 @@ public class LectureProposalDto {
         return LectureProposalDto.builder()
                 .proposalId(lectureProposalEntity.getProposal_id())
                 .user(lectureProposalEntity.getUser())
+                .userName(lectureProposalEntity.getUser().getName())
                 .title(lectureProposalEntity.getTitle())
                 .category(lectureProposalEntity.getCategory())
                 .startDate(lectureProposalEntity.getStart_date())
@@ -66,6 +89,7 @@ public class LectureProposalDto {
                 .region(lectureProposalEntity.getRegion())
                 .price(lectureProposalEntity.getPrice())
                 .content(lectureProposalEntity.getContent())
+                .currentParticipants(lectureProposalEntity.getCurrent_participants())
                 .createDate(lectureProposalEntity.getCreated_date())
                 .build();
     }
