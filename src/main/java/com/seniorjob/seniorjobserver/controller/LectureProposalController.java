@@ -48,5 +48,4 @@ public class LectureProposalController {
     public List<LectureProposalDto> getAllProposals() {
         return lectureProposalService.getAllProposals();
     }
-
 }
