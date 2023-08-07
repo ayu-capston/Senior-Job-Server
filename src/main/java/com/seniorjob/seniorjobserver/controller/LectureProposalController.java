@@ -1,8 +1,6 @@
 package com.seniorjob.seniorjobserver.controller;
 
 import com.seniorjob.seniorjobserver.domain.entity.UserEntity;
-import com.seniorjob.seniorjobserver.dto.LectureApplyDto;
-import com.seniorjob.seniorjobserver.dto.LectureDto;
 import com.seniorjob.seniorjobserver.dto.LectureProposalDto;
 import com.seniorjob.seniorjobserver.repository.UserRepository;
 import com.seniorjob.seniorjobserver.service.LectureProposalService;
@@ -49,4 +47,11 @@ public class LectureProposalController {
         return lectureProposalService.getAllProposals();
     }
 
+    // 강좌제안 상세보기API
+    // GET /api/lectureproposal/{proposal_id}
+    @GetMapping("/{proposal_id}")
+    public ResponseEntity<LectureProposalDto> getLectureProposalDetail(@PathVariable Long proposal_id){
+        LectureProposalDto lectureProposal = lectureProposalService.getDetail(proposal_id);
+        return ResponseEntity.ok(lectureProposal);
+    }
 }
