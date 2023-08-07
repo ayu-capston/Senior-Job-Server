@@ -22,6 +22,23 @@ public class LectureController {
 		this.lectureService = lectureService;
 	}
 
+	// 강좌개설API
+	// POST /api/lectures
+	@PostMapping
+	public ResponseEntity<LectureDto> createLecture(@RequestBody LectureDto lectureDto) {
+		LectureDto createdLecture = lectureService.createLecture(lectureDto);
+		return ResponseEntity.ok(createdLecture);
+	}
+
+	// 개설된강좌수정API
+	// PUT /api/lectures/{id}
+	@PutMapping("/{id}")
+	public ResponseEntity<LectureDto> updateLecture(@PathVariable("id") Long id, @RequestBody LectureDto lectureDto) {
+		LectureDto updatedLecture = lectureService.updateLecture(id, lectureDto);
+		return ResponseEntity.ok(updatedLecture);
+	}
+
+	// 강좌전체조회API
 	// GET /api/lectures
 	@GetMapping
 	public ResponseEntity<List<LectureDto>> getAllLectures() {
@@ -33,20 +50,7 @@ public class LectureController {
 		return ResponseEntity.ok(lectureList);
 	}
 
-	// POST /api/lectures
-	@PostMapping
-	public ResponseEntity<LectureDto> createLecture(@RequestBody LectureDto lectureDto) {
-		LectureDto createdLecture = lectureService.createLecture(lectureDto);
-		return ResponseEntity.ok(createdLecture);
-	}
-
-	// PUT /api/lectures/{id}
-	@PutMapping("/{id}")
-	public ResponseEntity<LectureDto> updateLecture(@PathVariable("id") Long id, @RequestBody LectureDto lectureDto) {
-		LectureDto updatedLecture = lectureService.updateLecture(id, lectureDto);
-		return ResponseEntity.ok(updatedLecture);
-	}
-
+	// 개설된강좌삭제API
 	// Delete /api/lectures/{id}
 	@DeleteMapping("/{id}")
 	public ResponseEntity<Void> deleteLecture(@PathVariable("id") Long id) {
@@ -54,6 +58,7 @@ public class LectureController {
 		return ResponseEntity.noContent().build();
 	}
 
+	// 개설된강좌상세정보API
 	// GET /api/lectures/{id}
 	@GetMapping("/{id}")
 	public ResponseEntity<LectureDto> getDetailLectureById(@PathVariable("id") Long id) {
@@ -94,6 +99,18 @@ public class LectureController {
 	public ResponseEntity<List<LectureDto>> sortLecturesByPopularity(@RequestParam(value = "descending", defaultValue = "false") boolean descending) {
 		List<LectureDto> lectureList = lectureService.getAllLectures();
 		lectureList = lectureService.sortLecturesByPopularity(lectureList, descending);
+		return ResponseEntity.ok(lectureList);
+	}
+
+	// 강좌제목검색API
+	// Get /api/lectures/search?title={문자}
+	@GetMapping("/search")
+	public ResponseEntity<List<LectureDto>> searchLecturesByTitle(@RequestParam("title") String title){
+		List<LectureDto> lectureList = lectureService.searchLecturesByTitle(title);
+		for(LectureDto lectureDto : lectureList){
+			LectureEntity.LectureStatus status = lectureService.getLectureStatus(lectureDto.getCreate_id());
+			lectureDto.setStatus(status);
+		}
 		return ResponseEntity.ok(lectureList);
 	}
 

@@ -16,16 +16,19 @@ import java.util.stream.Collectors;
 public class LectureService {
     private final LectureRepository lectureRepository;
 
+    // 모든강좌조회
     public LectureService(LectureRepository lectureRepository) {
         this.lectureRepository = lectureRepository;
     }
+
     public List<LectureDto> getAllLectures() {
         List<LectureEntity> lectureEntities = lectureRepository.findAll();
         return lectureEntities.stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
     }
-    
+
+    // 강좌개설
     public LectureDto createLecture(LectureDto lectureDto) {
         LocalDateTime currentDate = LocalDateTime.now();
         LocalDateTime startDate = lectureDto.getStart_date();
@@ -57,6 +60,7 @@ public class LectureService {
         return convertToDto(savedLecture);
     }
 
+    // 강좌수정
     public LectureDto updateLecture(Long create_id, LectureDto lectureDto) {
         LectureEntity existingLecture = lectureRepository.findById(create_id)
                 .orElseThrow(() -> new RuntimeException("강좌아이디 찾지못함 create_id: " + create_id));
@@ -88,6 +92,7 @@ public class LectureService {
         lectureRepository.deleteById(create_id);
     }
 
+    // 강좌상세보기
     public LectureDto getDetailLectureById(Long create_id) {
         LectureEntity lectureEntity = lectureRepository.findById(create_id)
                 .orElseThrow(() -> new RuntimeException("강좌아이디 찾지못함 create_id: " + create_id));
@@ -95,28 +100,12 @@ public class LectureService {
     }
 
     // 강좌검색 : 제목
-    // 강좌검색 : 제목+상태
     public List<LectureDto> searchLecturesByTitle(String title) {
         List<LectureEntity> lectureEntities = lectureRepository.findByTitleContaining(title);
         return lectureEntities.stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
     }
-
-//    public List<LectureDto> searchLecturesByTitleAndStatus(String title, LectureEntity.LectureStatus status) {
-//        if (title != null && status != null) {
-//            List<LectureEntity> lectureEntities = lectureRepository.findByTitleContainingAndStatus(title, status);
-//            return lectureEntities.stream()
-//                    .map(this::convertToDto)
-//                    .collect(Collectors.toList());
-//        } else if (title != null) {
-//            return searchLecturesByTitle(title);
-//        } else if (status != null) {
-//            return searchLecturesByStatus(status);
-//        } else {
-//            return Collections.emptyList();
-//        }
-//    }
 
     // 강좌ID기반 강좌상태 가져오는 메서드
     public LectureEntity.LectureStatus getLectureStatus(Long create_id) {

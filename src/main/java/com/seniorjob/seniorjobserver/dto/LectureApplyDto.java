@@ -24,17 +24,23 @@ public class LectureApplyDto {
     private String userName;
     private String applyReason;
 
+    private LectureApplyEntity.LectureApplyStatus lectureApplyStatus;
+
     @JsonIgnore
     private LocalDateTime createdDate;
+
+    @JsonIgnore
+    private Boolean recruitmentClosed;
 
     public LectureApplyDto(LectureApplyEntity lectureApply) {
         this.leId = lectureApply.getLeId();
         this.applyReason = lectureApply.getApplyReason();
         this.createdDate = lectureApply.getCreatedDate();
         this.userName = lectureApply.getUser().getName();
+        this.lectureApplyStatus = lectureApply.getLectureApplyStatus();
+        this.recruitmentClosed = lectureApply.getRecruitmentClosed();
     }
 
-    @JsonIgnore
     public LectureApplyEntity toEntity() {
         return LectureApplyEntity.builder()
                 .leId(leId)
@@ -45,12 +51,13 @@ public class LectureApplyDto {
 
     @Builder
     public LectureApplyDto(Long leId, LectureEntity lecture, UserEntity user, String userName, String applyReason,
-                           LocalDateTime createdDate) {
+                           LocalDateTime createdDate, LectureApplyEntity.LectureApplyStatus lectureApplyStatus) {
         this.leId = leId;
         this.lecture = lecture;
         this.user = user;
         this.userName = userName;
         this.applyReason = applyReason;
         this.createdDate = createdDate;
+        this.lectureApplyStatus = lectureApplyStatus;
     }
 }
