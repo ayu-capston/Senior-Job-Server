@@ -1,8 +1,6 @@
 package com.seniorjob.seniorjobserver.controller;
 
 import com.seniorjob.seniorjobserver.domain.entity.UserEntity;
-import com.seniorjob.seniorjobserver.dto.LectureApplyDto;
-import com.seniorjob.seniorjobserver.dto.LectureDto;
 import com.seniorjob.seniorjobserver.dto.LectureProposalDto;
 import com.seniorjob.seniorjobserver.repository.UserRepository;
 import com.seniorjob.seniorjobserver.service.LectureProposalService;
@@ -47,5 +45,34 @@ public class LectureProposalController {
     @GetMapping
     public List<LectureProposalDto> getAllProposals() {
         return lectureProposalService.getAllProposals();
+    }
+
+
+    // 강좌제안 상세보기API
+    // GET /api/lectureproposal/{proposal_id}
+    @GetMapping("/{proposal_id}")
+    public ResponseEntity<LectureProposalDto> getLectureProposalDetail(@PathVariable Long proposal_id){
+        LectureProposalDto lectureProposal = lectureProposalService.getDetail(proposal_id);
+        return ResponseEntity.ok(lectureProposal);
+    }
+    // 강좌제안 수정API
+    // PUT /api/lectureproposal/
+    @PutMapping("/{userId}/{proposal_id}")
+    public ResponseEntity<LectureProposalDto> updateLectureProposal(@PathVariable Long userId, @PathVariable Long proposal_id, @RequestBody LectureProposalDto lectureProposalDto) {
+        UserEntity user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다. ID: " + userId));
+        LectureProposalDto updatedProposal = lectureProposalService.updateLectureProposal(user, proposal_id, lectureProposalDto);
+        return ResponseEntity.ok(updatedProposal);
+    }
+
+    // 강좌제안 삭제API
+    // DELETE /api/lectureproposal/{userId}/{proposal_id}
+    @DeleteMapping("/{userId}/{proposal_id}")
+    public ResponseEntity<String> deleteLectureProposal(@PathVariable Long userId, @PathVariable Long proposal_id) {
+        UserEntity user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다. ID: " + userId));
+
+        String responseMessage = lectureProposalService.deleteLectureProposal(user, proposal_id);
+        return ResponseEntity.ok(responseMessage);
     }
 }
