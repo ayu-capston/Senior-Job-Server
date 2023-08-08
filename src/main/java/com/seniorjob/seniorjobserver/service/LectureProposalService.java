@@ -1,5 +1,6 @@
 package com.seniorjob.seniorjobserver.service;
 
+import com.amazonaws.services.kms.model.NotFoundException;
 import com.seniorjob.seniorjobserver.domain.entity.LectureEntity;
 import com.seniorjob.seniorjobserver.domain.entity.LectureProposalEntity;
 import com.seniorjob.seniorjobserver.domain.entity.UserEntity;
@@ -7,7 +8,9 @@ import com.seniorjob.seniorjobserver.dto.LectureProposalDto;
 import com.seniorjob.seniorjobserver.repository.LectureProposalRepository;
 import com.seniorjob.seniorjobserver.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -58,4 +61,15 @@ public class LectureProposalService {
                 .map(LectureProposalDto::new)
                 .collect(Collectors.toList());
     }
+
+    // 제안된강좌 상세보기
+    public LectureProposalDto getDetail(Long proposal_id) {
+        LectureProposalEntity entity = lectureProposalRepository.findById(proposal_id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        String.format("조회하신 %d는 없는 강좌입니다.", proposal_id)));
+
+        return LectureProposalDto.convertToDto(entity);
+    }
+
+
 }
