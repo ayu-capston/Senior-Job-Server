@@ -8,6 +8,6 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 
 @Repository
-public interface LectureProposalRepository extends JpaRepository<LectureProposalEntity, Long>{
-
+public interface LectureProposalRepository extends JpaRepository<LectureProposalEntity, Long> {
 }
+
