@@ -47,7 +47,6 @@ public class LectureProposalController {
         return lectureProposalService.getAllProposals();
     }
 
-
     // 강좌제안 상세보기API
     // GET /api/lectureproposal/{proposal_id}
     @GetMapping("/{proposal_id}")
@@ -55,6 +54,7 @@ public class LectureProposalController {
         LectureProposalDto lectureProposal = lectureProposalService.getDetail(proposal_id);
         return ResponseEntity.ok(lectureProposal);
     }
+
     // 강좌제안 수정API
     // PUT /api/lectureproposal/
     @PutMapping("/{userId}/{proposal_id}")
