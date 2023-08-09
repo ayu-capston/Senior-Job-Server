@@ -1,15 +1,20 @@
 package com.seniorjob.seniorjobserver.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.seniorjob.seniorjobserver.domain.entity.LectureEntity;
 import com.seniorjob.seniorjobserver.dto.LectureDto;
 import com.seniorjob.seniorjobserver.service.LectureService;
+import com.seniorjob.seniorjobserver.service.StorageService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -17,18 +22,28 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/lectures")
 public class LectureController {
 	private final LectureService lectureService;
+	private final StorageService storageService;
 
-	public LectureController(LectureService lectureService) {
+	public LectureController(LectureService lectureService, StorageService storageService) {
 		this.lectureService = lectureService;
+		this.storageService = storageService;
 	}
-
 	// 강좌개설API
 	// POST /api/lectures
 	@PostMapping
-	public ResponseEntity<LectureDto> createLecture(@RequestBody LectureDto lectureDto) {
+	public ResponseEntity<LectureDto> createLecture(@RequestParam("file") MultipartFile file, @RequestParam("lectureDto") String lectureDtoJson) throws IOException {
+		ObjectMapper objectMapper = new ObjectMapper();
+		objectMapper.registerModule(new JavaTimeModule());
+		LectureDto lectureDto = objectMapper.readValue(lectureDtoJson, LectureDto.class);
+
+		String imageUrl = storageService.uploadImage(file);
+
+		lectureDto.setImage_url(imageUrl);
+
 		LectureDto createdLecture = lectureService.createLecture(lectureDto);
 		return ResponseEntity.ok(createdLecture);
 	}
+
 
 	// 개설된강좌수정API
 	// PUT /api/lectures/{id}

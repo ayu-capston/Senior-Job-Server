@@ -90,4 +90,5 @@ $RECYCLE.BIN/
 *.lnk
 
 # Env
-*/application.properties
+src/main/resources/application.properties
+src/main/resources/application.yml
