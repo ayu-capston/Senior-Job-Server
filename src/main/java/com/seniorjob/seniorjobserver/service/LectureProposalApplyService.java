@@ -1,7 +1,6 @@
 package com.seniorjob.seniorjobserver.service;
 
 
-import com.seniorjob.seniorjobserver.domain.entity.LectureEntity;
 import com.seniorjob.seniorjobserver.domain.entity.LectureProposalApplyEntity;
 import com.seniorjob.seniorjobserver.domain.entity.LectureProposalEntity;
 import com.seniorjob.seniorjobserver.domain.entity.UserEntity;

@@ -1,6 +1,5 @@
 package com.seniorjob.seniorjobserver.controller;
 
-import com.seniorjob.seniorjobserver.domain.entity.LectureApplyEntity;
 import com.seniorjob.seniorjobserver.domain.entity.LectureProposalApplyEntity;
 import com.seniorjob.seniorjobserver.dto.LectureProposalApplyDto;
 import com.seniorjob.seniorjobserver.service.LectureProposalApplyService;
