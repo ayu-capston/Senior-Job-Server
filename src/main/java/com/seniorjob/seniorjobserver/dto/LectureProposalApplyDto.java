@@ -46,7 +46,7 @@ public class LectureProposalApplyDto {
 
     @Builder
     public LectureProposalApplyDto(Long le_id, LectureProposalEntity lectureProposal, UserEntity user, String userName, String applyReason,
-                           LocalDateTime createdDate, LectureProposalApplyEntity.LectureProposalApplyStatus lectureProposalApplyStatus) {
+                                   LocalDateTime createdDate, LectureProposalApplyEntity.LectureProposalApplyStatus lectureProposalApplyStatus) {
         this.le_Id = le_id;
         this.lectureProposal = lectureProposal;
         this.user = user;

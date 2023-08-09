@@ -54,7 +54,7 @@ public class LectureProposalApplyEntity {
 
     @Builder
     public LectureProposalApplyEntity(Long le_id, LectureProposalEntity lectureProposal, UserEntity user, String applyReason,
-                              LocalDateTime createdDate) {
+                                      LocalDateTime createdDate) {
         this.le_id = le_id;
         this.lectureProposal = lectureProposal;
         this.user = user;
