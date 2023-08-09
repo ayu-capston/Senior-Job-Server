@@ -11,7 +11,7 @@ import java.util.Collections;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/")
+@RequestMapping("/api/lectureapply")
 public class LectureApplyController {
 
     private final LectureApplyService lectureApplyService;
@@ -22,8 +22,8 @@ public class LectureApplyController {
     }
 
     // 강좌 참여 신청 API
-    // POST /api/lectureapply
-    @PostMapping("/lectureapply")
+    // POST /apply/{userId}/{lectureId}/{applyReason}
+    @PostMapping("/apply")
     public ResponseEntity<String> applyForLecture(@RequestParam Long userId, @RequestParam Long lectureId, @RequestParam(required = false) String applyReason) {
         try {
             lectureApplyService.applyForLecture(userId, lectureId, applyReason);
@@ -36,8 +36,8 @@ public class LectureApplyController {
     }
 
     // 강좌 신청 취소 API
-    // DELETE /api/lectureapply
-    @DeleteMapping("/lectureapply")
+    // DELETE /cancel/{userId}/{lectureId}
+    @DeleteMapping("/cancel")
     public ResponseEntity<String> cancelLectureApply(@RequestParam Long userId, @RequestParam Long lectureId) {
         try {
             String message = lectureApplyService.cancelLectureApply(userId, lectureId);
@@ -48,17 +48,17 @@ public class LectureApplyController {
     }
 
     // 해당 강좌에 신청한 회원 목록 조회 API
-    // GET /api/lectureapply/{lectureId}/applicants
-    @GetMapping("/lectureapply/{lectureId}/applicants")
-    public ResponseEntity<List<LectureApplyDto>> getApplicantsByLectureId(@PathVariable Long lectureId) {
+    // GET /list?lectureId=99
+    @GetMapping("/list")
+    public ResponseEntity<List<LectureApplyDto>> getApplicantsByLectureId(@RequestParam("lectureId") Long lectureId) {
         List<LectureApplyDto> applicants = lectureApplyService.getApplicantsByLectureId(lectureId);
         return ResponseEntity.ok(applicants);
     }
 
     // 회원목록에서 승인이 된 회원들을 일괄 모집마감하는 API
-    // PUT /api/lectureapply/{lectureId}/close
-    @PutMapping("/lectureapply/{lectureId}/close")
-    public ResponseEntity<String> closeLectureApply(@PathVariable Long lectureId) {
+    // PUT /close/{lectureId}
+    @PutMapping("/close")
+    public ResponseEntity<String> closeLectureApply(@RequestParam Long lectureId) {
         try {
             return lectureApplyService.closeLectureApply(lectureId);
         } catch (RuntimeException e) {
@@ -66,10 +66,14 @@ public class LectureApplyController {
         }
     }
 
+
     // 강좌참여신청 승인 상태 개별 변경 API
-    // PUT /api/lectureapply/{userId}/status{lectureId}
-    @PutMapping("/lectureapply/{userId}/status/{lectureId}")
-    public ResponseEntity<String> updateLectureApplyStatus(@PathVariable Long userId, @PathVariable Long lectureId, @RequestParam LectureApplyEntity.LectureApplyStatus status) {
+    // PUT /approve/{userId}/{lectureId}/{status}
+    @PutMapping("/approve")
+    public ResponseEntity<String> updateLectureApplyStatus(
+            @RequestParam Long userId,
+            @RequestParam Long lectureId,
+            @RequestParam LectureApplyEntity.LectureApplyStatus status) {
         try {
             lectureApplyService.updateLectureApplyStatus(userId, lectureId, status);
             String message = String.format("강좌참여신청을 변경하였습니다. userId: %d, lectureId: %d", userId, lectureId);
@@ -78,4 +82,5 @@ public class LectureApplyController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+
 }

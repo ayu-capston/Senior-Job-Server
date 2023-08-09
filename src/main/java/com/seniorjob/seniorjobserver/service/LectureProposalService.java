@@ -1,6 +1,5 @@
 package com.seniorjob.seniorjobserver.service;
 
-import com.amazonaws.services.kms.model.NotFoundException;
 import com.seniorjob.seniorjobserver.domain.entity.LectureEntity;
 import com.seniorjob.seniorjobserver.domain.entity.LectureProposalEntity;
 import com.seniorjob.seniorjobserver.domain.entity.UserEntity;
@@ -9,7 +8,12 @@ import com.seniorjob.seniorjobserver.repository.LectureProposalRepository;
 import com.seniorjob.seniorjobserver.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
@@ -71,5 +75,50 @@ public class LectureProposalService {
         return LectureProposalDto.convertToDto(entity);
     }
 
+    // 제안된 강좌 수정
+    public LectureProposalDto updateLectureProposal(UserEntity user, Long proposal_id, LectureProposalDto lectureProposalDto) {
 
+        LectureProposalEntity lectureProposal = lectureProposalRepository.findById(proposal_id)
+                .orElseThrow(() -> new RuntimeException("해당 강좌 제안을 찾을 수 없습니다. ID: " + proposal_id));
+
+        if (!lectureProposal.getUser().getUid().equals(user.getUid())) {
+            throw new IllegalArgumentException("강좌제안 개설자와 일치하지 않습니다.");
+        }
+
+        LocalDateTime currentDate = LocalDateTime.now();
+
+        if (lectureProposalDto.getStartDate().isBefore(currentDate)) {
+            throw new IllegalArgumentException("시작날짜는 현재 날짜 이후로 설정해야 합니다.");
+        }
+
+        if (lectureProposalDto.getEndDate().isBefore(currentDate) || lectureProposalDto.getEndDate().isBefore(lectureProposalDto.getStartDate())) {
+            throw new IllegalArgumentException("종료날짜는 오늘 이후 날짜이고 시작날짜 이후로 설정해야 합니다.");
+        }
+
+        lectureProposal.setTitle(lectureProposalDto.getTitle());
+        lectureProposal.setCategory(lectureProposalDto.getCategory());
+        lectureProposal.setStart_date(lectureProposalDto.getStartDate());
+        lectureProposal.setEnd_date(lectureProposalDto.getEndDate());
+        lectureProposal.setRegion(lectureProposalDto.getRegion());
+        lectureProposal.setPrice(lectureProposalDto.getPrice());
+        lectureProposal.setContent(lectureProposalDto.getContent());
+
+        LectureProposalEntity updatedProposal = lectureProposalRepository.save(lectureProposal);
+        return new LectureProposalDto(updatedProposal);
+    }
+
+
+    // 제안된강좌 삭제
+    public String deleteLectureProposal(UserEntity user, Long proposal_id) {
+        LectureProposalEntity lectureProposal = lectureProposalRepository.findById(proposal_id)
+                .orElseThrow(() -> new RuntimeException("해당 강좌 제안을 찾을 수 없습니다. ID: " + proposal_id));
+
+        // 사용자 확인
+        if (!lectureProposal.getUser().getUid().equals(user.getUid())) {
+            throw new IllegalArgumentException("강좌제안 개설자만 해당 강좌 제안을 삭제할 수 있습니다.");
+        }
+
+        lectureProposalRepository.deleteById(proposal_id);
+        return proposal_id + "를 삭제하였습니다.";
+    }
 }
