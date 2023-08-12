@@ -2,27 +2,71 @@ package com.seniorjob.seniorjobserver.controller;
 
 import com.seniorjob.seniorjobserver.domain.entity.UserEntity;
 import com.seniorjob.seniorjobserver.dto.UserDto;
+import com.seniorjob.seniorjobserver.repository.UserRepository;
 import com.seniorjob.seniorjobserver.service.UserService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/users")
 public class UserController {
     private final UserService userService;
+    private final UserRepository userRepository;
 
-    public UserController(UserService userService) {
+    @Autowired
+    public UserController(UserService userService, UserRepository userRepository, PasswordEncoder pwEncoder) {
         this.userService = userService;
+        this.userRepository = userRepository;
     }
 
-    // 구직자/사업주 회원생성API
-    // POST /api/users
-    @PostMapping
-    public ResponseEntity<UserEntity> createUser(@RequestBody UserDto userDto) {
-        UserEntity userEntity = userService.createUser(userDto);
-        return ResponseEntity.ok(userEntity);
+    // 구직자/사업주 회원가입API with 암호화 세션
+    @PostMapping("/join")
+    public ResponseEntity<?> registerUser(@RequestBody UserDto userDto) {
+        try {
+            UserEntity userEntity = userService.createUser(userDto);
+            return ResponseEntity.ok(userEntity);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    // 세션 로그인
+    // POST /api/users/login
+    @PostMapping("/login")
+    public ResponseEntity<?> loginUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String currentUserName = authentication.getName();
+
+        UserEntity user = userRepository.findByPhoneNumber(currentUserName)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with phone number: " + currentUserName));
+
+        return ResponseEntity.ok(user.getName() + " 회원님 로그인에 성공하였습니다");
+    }
+
+    // 세션 로그아웃
+    // POST /api/users/logout
+
+    // 회원전체목록API
+    // GET /api/users/all
+    @GetMapping("/all")
+    public ResponseEntity<?> getAllUsers() {
+        try {
+            List<UserDto> users = userService.getAllUsers();
+            return new ResponseEntity<>(users, HttpStatus.OK);
+        } catch (IllegalArgumentException e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.NO_CONTENT); // 회원이 없을 때의 메시지를 반환합니다.
+        } catch (Exception e) {
+            // 로깅 추가
+            e.printStackTrace(); // 이것은 임시 로깅입니다. 실제 프로덕션에서는 SLF4J, Logback 등의 로깅 프레임워크를 사용하여 로그를 남기는 것이 좋습니다.
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR); // 그 외의 에러 메시지를 반환합니다.
+        }
     }
 }

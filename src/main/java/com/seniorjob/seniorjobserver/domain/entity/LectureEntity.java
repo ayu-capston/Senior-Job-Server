@@ -42,6 +42,10 @@ public class LectureEntity extends TimeEntity {
     @GeneratedValue(strategy= GenerationType.IDENTITY)
     private Long create_id;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "uid", referencedColumnName = "uid")
+    private UserEntity user;
+
     @Column(name = "creator", nullable = false)
     private String creator;
 

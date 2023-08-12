@@ -1,7 +1,9 @@
 package com.seniorjob.seniorjobserver.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.seniorjob.seniorjobserver.domain.entity.LectureEntity;
 import com.seniorjob.seniorjobserver.domain.entity.LectureEntity.LectureStatus;
+import com.seniorjob.seniorjobserver.domain.entity.UserEntity;
 import lombok.*;
 import org.springframework.format.annotation.DateTimeFormat;
 
@@ -14,6 +16,7 @@ import java.time.LocalDateTime;
 public class LectureDto {
 
     private Long create_id;
+    private UserEntity user;
     private String creator;
     private Integer max_participants;
     private Integer current_participants;

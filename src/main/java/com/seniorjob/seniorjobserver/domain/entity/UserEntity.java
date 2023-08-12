@@ -1,7 +1,6 @@
 package com.seniorjob.seniorjobserver.domain.entity;
 
 import lombok.*;
-
 import javax.persistence.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -26,14 +25,32 @@ public class UserEntity {
     @Column(name = "date_of_birth", nullable = false)
     private LocalDate dateOfBirth;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "gender", nullable = false)
-    private char gender;
+    private UserEntity.Gender gender = Gender.기타;
+
+    public enum Gender{
+        여성, 남성, 기타
+    }
 
     @Column(name = "phone_number", nullable = false, unique = true)
     private String phoneNumber;
 
-    @Column(name = "type", nullable = false)
-    private char type;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "user_type", nullable = false)
+    private UserEntity.UserType userType = UserType.개인;
+
+    public enum UserType{
+        사업자, 개인
+    }
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "login_type", nullable = false)
+    private UserEntity.LoginType loginType = LoginType.쇼셜;
+
+    public enum LoginType{
+        쇼셜, 카카오
+    }
 
     @Column(name = "job", nullable = false)
     private String job;
@@ -54,15 +71,17 @@ public class UserEntity {
     private LocalDateTime createDate;
 
     @Builder
-    public UserEntity(String encryptionCode, String name, LocalDate dateOfBirth, char gender, String phoneNumber,
-                      char type, String job, String region, String imgKey, String category,
+    public UserEntity(Long uid, String encryptionCode, String name, LocalDate dateOfBirth, Gender gender, String phoneNumber,
+                      LoginType loginType, UserType userType, String job, String region, String imgKey, String category,
                       LocalDateTime updateDate, LocalDateTime createDate) {
+        this.uid = uid;
         this.encryptionCode = encryptionCode;
         this.name = name;
         this.dateOfBirth = dateOfBirth;
         this.gender = gender;
+        this.loginType = loginType;
+        this.userType = userType;
         this.phoneNumber = phoneNumber;
-        this.type = type;
         this.job = job;
         this.region = region;
         this.imgKey = imgKey;
