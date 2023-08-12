@@ -1,6 +1,8 @@
 package com.seniorjob.seniorjobserver.controller;
 
 import com.seniorjob.seniorjobserver.domain.entity.UserEntity;
+import com.seniorjob.seniorjobserver.dto.LectureApplyDto;
+import com.seniorjob.seniorjobserver.dto.LectureDto;
 import com.seniorjob.seniorjobserver.dto.LectureProposalDto;
 import com.seniorjob.seniorjobserver.repository.UserRepository;
 import com.seniorjob.seniorjobserver.service.LectureProposalService;

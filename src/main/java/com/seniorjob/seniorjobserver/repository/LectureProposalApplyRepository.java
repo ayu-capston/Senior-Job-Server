@@ -10,7 +10,6 @@ import java.util.Optional;
 
 @Repository
 public interface LectureProposalApplyRepository extends JpaRepository<LectureProposalApplyEntity, Long> {
-    boolean existsByUserAndLectureProposal(UserEntity user, LectureProposalEntity lectureProposal);
 
     Optional<LectureProposalApplyEntity> findByUserAndLectureProposal(UserEntity user, LectureProposalEntity lectureProposal);
 
@@ -18,6 +17,7 @@ public interface LectureProposalApplyRepository extends JpaRepository<LecturePro
 
     List<LectureProposalApplyEntity> findByLectureProposalAndLectureProposalApplyStatus(LectureProposalEntity lectureProposal, LectureProposalApplyEntity.LectureProposalApplyStatus status);
 
-    Optional<Object> findByLectureProposalAndRecruitmentClosed(LectureProposalEntity lectureProposal, boolean b);
+    boolean existsByUserAndLectureProposal(UserEntity user, LectureProposalEntity lectureProposal);
 
+    Optional<LectureProposalApplyEntity> findByLectureProposalAndRecruitmentClosed(LectureProposalEntity lectureProposal, boolean recruitmentClosed);
 }
