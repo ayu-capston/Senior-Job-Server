@@ -4,6 +4,9 @@ import com.seniorjob.seniorjobserver.domain.entity.UserEntity;
 import com.seniorjob.seniorjobserver.dto.UserDto;
 import com.seniorjob.seniorjobserver.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -49,6 +52,46 @@ public class UserService {
         return userEntities.stream()
                 .map(this::convertToDo)
                 .collect(Collectors.toList());
+    }
+
+    // 로그인된 회원정보
+    public UserDto getLoggedInUserDetails(){
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String userName = authentication.getName();
+
+        // 로그인 되지 않았을 경우
+        if ("anonymousUser".equals(userName)) {
+            throw new IllegalStateException("로그인을 해주세요!");
+        }
+
+        UserEntity userEntity = userRepository.findByPhoneNumber(userName)
+                .orElseThrow(()->new UsernameNotFoundException("유저를 찾을 수 없습니다.."));
+        UserDto userDto = convertToDo(userEntity);
+        userDto.setEncryptionCode(null);
+        return userDto;
+    }
+
+    // 회원정보 수정
+    public UserDto updateUser(UserDto userDto){
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String userName = authentication.getName();
+
+        // 로그인 되지 않았을 경우
+        if ("anonymousUser".equals(userName)) {
+            throw new IllegalStateException("로그인을 해주세요!");
+        }
+
+        UserEntity userEntity = userRepository.findByPhoneNumber(userName)
+                .orElseThrow(()->new UsernameNotFoundException("유저를 찾을 수 없습니다.."));
+        userEntity.setName(Optional.ofNullable(userDto.getName()).orElse(userEntity.getName()));
+        userEntity.setDateOfBirth(Optional.ofNullable(userDto.getDateOfBirth()).orElse(userEntity.getDateOfBirth()));
+        userEntity.setJob(Optional.ofNullable(userDto.getJob()).orElse(userEntity.getJob()));
+        userEntity.setRegion(Optional.ofNullable(userDto.getRegion()).orElse(userEntity.getRegion()));
+        userEntity.setImgKey(Optional.ofNullable(userDto.getImgKey()).orElse(userEntity.getImgKey()));
+        userEntity.setCategory(Optional.ofNullable(userDto.getCategory()).orElse(userEntity.getCategory()));
+
+        userRepository.save(userEntity);
+        return convertToDo(userEntity);
     }
 
     private UserDto convertToDo(UserEntity userEntity) {

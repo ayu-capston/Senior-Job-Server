@@ -69,4 +69,37 @@ public class UserController {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR); // 그 외의 에러 메시지를 반환합니다.
         }
     }
+
+    // 로그인된 회원정보api
+    // GET /api/users/detail
+    @GetMapping("/detail")
+    public ResponseEntity<?> getUserDetails() {
+        try {
+            UserDto userDto = userService.getLoggedInUserDetails();
+            return ResponseEntity.ok(userDto);
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
+        } catch (UsernameNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("에러 : " + e.getMessage());
+        }
+    }
+
+    // 회원정보수정API
+    // PUT /api/users/update/(현재로그인된 user의 정보를 불러와 수정)
+    @PutMapping("/update")
+    public ResponseEntity<?> updateUser(@RequestBody UserDto userDto){
+        try {
+            UserDto updateUser = userService.updateUser(userDto);
+            return ResponseEntity.ok(updateUser);
+        }catch (IllegalStateException e){
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
+        }catch (UsernameNotFoundException e){
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("에러 : " + e.getMessage());
+        }
+    }
+
 }
