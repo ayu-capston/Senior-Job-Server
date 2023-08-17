@@ -28,6 +28,7 @@ public class LectureController {
 		this.lectureService = lectureService;
 		this.storageService = storageService;
 	}
+
 	// 강좌개설API
 	// POST /api/lectures
 	@PostMapping
@@ -128,7 +129,6 @@ public class LectureController {
 		}
 		return ResponseEntity.ok(lectureList);
 	}
-
 
 	// 페이징
 	// GET /api/lectures/paging?page={no}&size={no}
