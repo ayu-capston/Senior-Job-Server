@@ -5,6 +5,7 @@ import com.seniorjob.seniorjobserver.domain.entity.LectureEntity;
 import com.seniorjob.seniorjobserver.domain.entity.LectureEntity.LectureStatus;
 import com.seniorjob.seniorjobserver.domain.entity.UserEntity;
 import lombok.*;
+import org.apache.catalina.User;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import java.time.LocalDateTime;
@@ -17,6 +18,14 @@ public class LectureDto {
 
     private Long create_id;
     private UserEntity user;
+    public UserEntity getUser() {
+        return this.user;
+    }
+
+    public void setUser(UserEntity user) {
+        this.user = user;
+    }
+
     private String creator;
     private Integer max_participants;
     private Integer current_participants;
@@ -50,9 +59,10 @@ public class LectureDto {
         this.status = status;
     }
 
-    public LectureEntity toEntity() {
+    public LectureEntity toEntity(UserEntity userEntity) {
         LectureEntity lectureEntity = LectureEntity.builder()
                 .create_id(create_id)
+                .user(this.user)
                 .creator(creator)
                 .maxParticipants(max_participants)
                 .currentParticipants(current_participants)
@@ -73,6 +83,7 @@ public class LectureDto {
                 .recruitEnd_date(recruitEnd_date)
                 .build();
 
+        lectureEntity.setUser(userEntity);
         lectureEntity.updateStatus();
         this.status = lectureEntity.getStatus();
 
@@ -105,6 +116,4 @@ public class LectureDto {
         this.createdDate = createdDate;
         this.recruitEnd_date = recruitEnd_date;
     }
-
-
 }

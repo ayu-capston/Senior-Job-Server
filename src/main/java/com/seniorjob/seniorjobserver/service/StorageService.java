@@ -75,4 +75,10 @@ public class StorageService {
         }
         return convertedFile;
     }
+
+    public void deleteImage(String imageUrl) {
+        String fileName = imageUrl.substring(imageUrl.lastIndexOf("/") + 1);
+        deleteFile(fileName);
+    }
+
 }
