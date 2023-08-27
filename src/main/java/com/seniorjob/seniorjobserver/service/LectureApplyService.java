@@ -37,6 +37,11 @@ public class LectureApplyService {
         LectureEntity lecture = lectureRepository.findById(lectureId)
                 .orElseThrow(() -> new RuntimeException("강좌를 찾을 수 없습니다. id: " + lectureId));
 
+        // 강좌의 상태가 '신청가능상태'가 아닌 경우 예외 처리
+        if (lecture.getStatus() != LectureEntity.LectureStatus.신청가능상태) {
+            throw new RuntimeException("현재 이 강좌는 '신청가능상태'가 아닙니다.");
+        }
+
         // 이미 강좌에 참여한 경우 예외 처리
         if (lectureApplyRepository.existsByUserAndLecture(user, lecture)) {
             throw new RuntimeException(lectureId + " 이미 참여하신 강좌입니다.");
@@ -108,8 +113,13 @@ public class LectureApplyService {
             lectureApplyRepository.save(applicant);
         }
 
+        lecture.setRecruitmentClosed(true);
+        lecture.setStatus(LectureEntity.LectureStatus.개설대기상태); // 강좌의 상태를 개설대기상태로 변경
+        lectureRepository.save(lecture);
+
         return ResponseEntity.ok("일괄 모집마감이 완료되었습니다.");
     }
+
 
     // 강좌참여신청 승인 상태 개별 변경
     public void updateLectureApplyStatus(Long userId, Long lectureId, LectureApplyEntity.LectureApplyStatus status) {

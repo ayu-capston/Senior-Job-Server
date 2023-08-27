@@ -67,7 +67,7 @@ public class UserService {
         UserEntity userEntity = userRepository.findByPhoneNumber(userName)
                 .orElseThrow(()->new UsernameNotFoundException("유저를 찾을 수 없습니다.."));
         UserDto userDto = convertToDo(userEntity);
-        userDto.setEncryptionCode(null);
+        //userDto.setEncryptionCode(null);
         return userDto;
     }
 

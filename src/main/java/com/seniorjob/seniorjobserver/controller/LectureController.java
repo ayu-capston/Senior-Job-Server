@@ -2,15 +2,29 @@ package com.seniorjob.seniorjobserver.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.seniorjob.seniorjobserver.repository.LectureRepository;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import com.seniorjob.seniorjobserver.domain.entity.LectureEntity;
+import com.seniorjob.seniorjobserver.domain.entity.UserEntity;
 import com.seniorjob.seniorjobserver.dto.LectureDto;
+import com.seniorjob.seniorjobserver.repository.UserRepository;
 import com.seniorjob.seniorjobserver.service.LectureService;
 import com.seniorjob.seniorjobserver.service.StorageService;
+import com.seniorjob.seniorjobserver.service.UserService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -23,33 +37,84 @@ import java.util.stream.Collectors;
 public class LectureController {
 	private final LectureService lectureService;
 	private final StorageService storageService;
+	private final UserRepository userRepository;
+	private final LectureRepository lectureRepository;
+	private final UserService userService;
+	private static final Logger log = LoggerFactory.getLogger(LectureController.class);
 
-	public LectureController(LectureService lectureService, StorageService storageService) {
+	public LectureController(LectureService lectureService, StorageService storageService, UserRepository userRepository, UserService userService, LectureRepository lectureRepository) {
 		this.lectureService = lectureService;
 		this.storageService = storageService;
+		this.userRepository = userRepository;
+		this.userService = userService;
+		this.lectureRepository = lectureRepository;
 	}
 
 	// 강좌개설API
 	// POST /api/lectures
+	@PreAuthorize("isAuthenticated()")
 	@PostMapping
-	public ResponseEntity<LectureDto> createLecture(@RequestParam("file") MultipartFile file, @RequestParam("lectureDto") String lectureDtoJson) throws IOException {
+	public ResponseEntity<LectureDto> createLecture(
+			@RequestParam("file") MultipartFile file,
+			@RequestParam("lectureDto") String lectureDtoJson,
+			@AuthenticationPrincipal UserDetails userDetails
+	) throws IOException {
 		ObjectMapper objectMapper = new ObjectMapper();
 		objectMapper.registerModule(new JavaTimeModule());
 		LectureDto lectureDto = objectMapper.readValue(lectureDtoJson, LectureDto.class);
 
-		String imageUrl = storageService.uploadImage(file);
+		UserEntity currentUser = userRepository.findByPhoneNumber(userDetails.getUsername())
+				.orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
+		lectureDto.setUser(currentUser); // 현재 로그인된 사용자의 정보를 강좌 DTO에 설정
+
+		// 이미지 업로드
+		String imageUrl = storageService.uploadImage(file);
 		lectureDto.setImage_url(imageUrl);
 
-		LectureDto createdLecture = lectureService.createLecture(lectureDto);
+		LectureDto createdLecture = lectureService.createLecture(lectureDto, currentUser);
+
+		if (createdLecture.getUser() != null) {
+			log.info("User assigned to createdLecture DTO: {}", createdLecture.getUser().toString());
+		} else {
+			log.warn("User is not assigned to createdLecture DTO");
+		}
+
 		return ResponseEntity.ok(createdLecture);
 	}
 
-
-	// 개설된강좌수정API
+	// 로그인된 유저의 개설된강좌수정API
 	// PUT /api/lectures/{id}
 	@PutMapping("/{id}")
-	public ResponseEntity<LectureDto> updateLecture(@PathVariable("id") Long id, @RequestBody LectureDto lectureDto) {
+	public ResponseEntity<LectureDto> updateLecture(
+			@PathVariable("id") Long id,
+			@RequestParam(value = "file", required = false) MultipartFile file,
+			@RequestParam("lectureDto") String lectureDtoJson,
+			@AuthenticationPrincipal UserDetails userDetails
+	) throws IOException {
+		ObjectMapper objectMapper = new ObjectMapper();
+		objectMapper.registerModule(new JavaTimeModule());
+		LectureDto lectureDto = objectMapper.readValue(lectureDtoJson, LectureDto.class);
+
+		UserEntity currentUser = userRepository.findByPhoneNumber(userDetails.getUsername())
+				.orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+		// 현재 사용자가 강좌의 생성자인지 확인
+		LectureEntity lectureEntity = lectureRepository.findById(id)
+				.orElseThrow(() -> new RuntimeException("강좌아이디 찾지못함 create_id: " + id));
+		if (!lectureEntity.getUser().equals(currentUser)) {
+			throw new RuntimeException("해당 강좌를 수정할 권한이 없습니다.");
+		}
+
+		// 새 파일이 제공된 경우
+		if (file != null) {
+			if (lectureEntity.getImage_url() != null && !lectureEntity.getImage_url().isEmpty()) {
+				storageService.deleteImage(lectureEntity.getImage_url());  // 기존 이미지 삭제
+			}
+			String imageUrl = storageService.uploadImage(file);
+			lectureDto.setImage_url(imageUrl);
+		}
+
 		LectureDto updatedLecture = lectureService.updateLecture(id, lectureDto);
 		return ResponseEntity.ok(updatedLecture);
 	}
@@ -87,6 +152,11 @@ public class LectureController {
 			return ResponseEntity.notFound().build();
 		}
 	}
+
+	// 세션로그인후 자신이 개설한 강좌목록 전체조회API
+
+	// 세션로그인후 자신이 개설한 강좌 상세보기API
+
 
 	// 강좌최신순/오래된순 정렬
 	// GET /api/lectures/sort/latest?descending=true

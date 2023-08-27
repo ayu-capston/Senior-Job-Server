@@ -1,10 +1,12 @@
 package com.seniorjob.seniorjobserver.config;
 
+import com.seniorjob.seniorjobserver.controller.CustomAccessDeniedHandler;
 import com.seniorjob.seniorjobserver.domain.entity.UserEntity;
 import com.seniorjob.seniorjobserver.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -22,6 +24,7 @@ import java.io.PrintWriter;
 @Configuration
 @EnableWebSecurity
 public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
+
     @Autowired
     private UserDetailsService userDetailsService;
 
@@ -32,13 +35,23 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
     protected void configure(HttpSecurity http) throws Exception {
         http
                 .authorizeRequests()
-                .antMatchers("/api/users/join", "/api/users/all", "/api/users/detail").permitAll()
-                .antMatchers("/api/users/login", "/api/users/update").authenticated()
+                .antMatchers("/api/users/join", "/api/users/all", "/api/lectureapply/apply", "/api/lectureapply/close", "/api/users/login", "/api/users/detail").permitAll()
+                .antMatchers( "/api/users/update", "/api/lectures", "/api/lectures/**").authenticated()
                 .anyRequest().authenticated()
                 .and()
                 .httpBasic()
                 .and()
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+                .and()
+                .exceptionHandling()
+                .authenticationEntryPoint((request, response, authException) -> {
+                    response.setCharacterEncoding("UTF-8");
+                    response.setContentType("application/json");
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    PrintWriter out = response.getWriter();
+                    out.println("{\"message\":\"로그인이 필요합니다.\"}");
+                })
+                .accessDeniedHandler(new CustomAccessDeniedHandler())  // 이 부분 추가
                 .and()
                 .csrf().disable()
                 .logout()
@@ -46,6 +59,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
                 .invalidateHttpSession(true)
                 .deleteCookies("JSESSIONID")
                 .logoutSuccessHandler((request, response, authentication) -> {
+                    // ... 기존의 로그아웃 처리 코드 ...
                     try {
                         // 로그인 중인 회원이 없는 경우
                         if (authentication == null || authentication.getPrincipal() == null || "anonymousUser".equals(authentication.getPrincipal().toString())) {

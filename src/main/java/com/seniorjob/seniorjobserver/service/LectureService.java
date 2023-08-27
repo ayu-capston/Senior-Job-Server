@@ -1,11 +1,20 @@
 package com.seniorjob.seniorjobserver.service;
 
+import com.seniorjob.seniorjobserver.controller.LectureController;
 import com.seniorjob.seniorjobserver.domain.entity.LectureEntity;
+import com.seniorjob.seniorjobserver.domain.entity.UserEntity;
 import com.seniorjob.seniorjobserver.dto.LectureDto;
 import com.seniorjob.seniorjobserver.repository.LectureRepository;
 import com.seniorjob.seniorjobserver.domain.entity.LectureEntity.LectureStatus;
+import com.seniorjob.seniorjobserver.repository.UserRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -15,10 +24,13 @@ import java.util.stream.Collectors;
 @Service
 public class LectureService {
     private final LectureRepository lectureRepository;
+    private final UserRepository userRepository;
+    private static final Logger log = LoggerFactory.getLogger(LectureController.class);
 
     // 모든강좌조회
-    public LectureService(LectureRepository lectureRepository) {
+    public LectureService(LectureRepository lectureRepository, UserRepository userRepository) {
         this.lectureRepository = lectureRepository;
+        this.userRepository = userRepository;
     }
 
     public List<LectureDto> getAllLectures() {
@@ -28,39 +40,51 @@ public class LectureService {
                 .collect(Collectors.toList());
     }
 
+    private UserEntity getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String currentPrincipalName = authentication.getName();
+        UserEntity user = userRepository.findByPhoneNumber(currentPrincipalName)
+                .orElseThrow(() -> new RuntimeException("로그인된 사용자를 찾을 수 없습니다."));
+        System.out.println("Current user: " + user); // or use a proper logger
+        return user;
+    }
+
     // 강좌개설
-    public LectureDto createLecture(LectureDto lectureDto) {
+    public LectureDto createLecture(LectureDto lectureDto, UserEntity userEntity) {
         LocalDateTime currentDate = LocalDateTime.now();
         LocalDateTime startDate = lectureDto.getStart_date();
         LocalDateTime endDate = lectureDto.getEnd_date();
         LocalDateTime recruitEndDate = lectureDto.getRecruitEnd_date();
+        LectureEntity lectureEntity = lectureDto.toEntity(userEntity);
+        lectureEntity.setUser(userEntity);
 
         // 시작 날짜가 현재 날짜 이전인 경우, 예외
         if (startDate.isBefore(currentDate)) {
-            throw new IllegalArgumentException("시작 날짜는 현재 날짜 이후로 설정해야 한다.");
+            throw new IllegalArgumentException("시작 날짜는 현재 날짜 이후로 설정해야 합니다.");
         }
 
         // 종료 날짜가 오늘 날짜 이후이고 시작 날짜 이후인 경우, 예외
         if (endDate.isBefore(currentDate) || endDate.isBefore(startDate)) {
-            throw new IllegalArgumentException("종료 날짜는 오늘 이후의 날짜이고 시작 날짜 이후로 설정해야 한다.");
+            throw new IllegalArgumentException("종료 날짜는 오늘 이후의 날짜이고 시작 날짜 이후로 설정해야 합니다.");
         }
 
         // 강좌 모집 마감 날짜가 시작 날짜 이전인 경우, 예외
         if (recruitEndDate.isAfter(startDate)) {
-            throw new IllegalArgumentException("강좌 모집 마감 날짜는 시작 날짜 이전으로 설정해야 한다.");
+            throw new IllegalArgumentException("강좌 모집 마감 날짜는 시작 날짜 이전으로 설정해야 합니다.");
         }
         // 강좌모집인원은 50명을 초과할수 없다. 초과할경우 예외
         if (lectureDto.getMax_participants() > 50) {
             throw new IllegalArgumentException("모집 인원은 50명을 초과할 수 없습니다.");
         }
 
-        LectureEntity lectureEntity = lectureDto.toEntity();
+        lectureEntity.setUser(userEntity);
         lectureEntity.updateStatus();
         LectureEntity savedLecture = lectureRepository.save(lectureEntity);
+
         return convertToDto(savedLecture);
     }
 
-    // 강좌수정
+    // 로그인된 유저의 강좌수정
     public LectureDto updateLecture(Long create_id, LectureDto lectureDto) {
         LectureEntity existingLecture = lectureRepository.findById(create_id)
                 .orElseThrow(() -> new RuntimeException("강좌아이디 찾지못함 create_id: " + create_id));
@@ -98,6 +122,10 @@ public class LectureService {
                 .orElseThrow(() -> new RuntimeException("강좌아이디 찾지못함 create_id: " + create_id));
         return convertToDto(lectureEntity);
     }
+
+    // 세션로그인후 자신이 개설한 강좌목록 전체조회
+
+    // 세션로그인후 자신이 개설한 강좌 상세보기
 
     // 강좌검색 : 제목
     public List<LectureDto> searchLecturesByTitle(String title) {
@@ -140,10 +168,10 @@ public class LectureService {
         return lectureList;
     }
 
-    // 강좌참여API
     private LectureDto convertToDto(LectureEntity lectureEntity) {
         return LectureDto.builder()
                 .create_id(lectureEntity.getCreate_id())
+
                 .creator(lectureEntity.getCreator())
                 .max_participants(lectureEntity.getMaxParticipants())
                 .current_participants(lectureEntity.getCurrentParticipants())
@@ -178,7 +206,7 @@ public class LectureService {
                 .orElseThrow(() -> new RuntimeException("강좌를 찾을 수 없습니다. id: " + lectureId));
 
         // 이미 모집 마감되었거나 시작된 강좌인 경우 예외 처리
-        if (lecture.getStatus() == LectureStatus.WAITING || lecture.getStatus() == LectureStatus.ONGOING) {
+        if (lecture.getStatus() == LectureStatus.개설대기상태 || lecture.getStatus() == LectureStatus.진행상태) {
             throw new RuntimeException("이미 모집 마감되었거나 진행 중인 강좌입니다.");
         }
 
@@ -187,7 +215,7 @@ public class LectureService {
             throw new RuntimeException("모집 마감일이 지났습니다. 강좌를 진행 상태로 변경할 수 없습니다.");
         }
 
-        lecture.setStatus(LectureStatus.ONGOING); // 강좌 상태를 진행 중으로 변경
+        lecture.setStatus(LectureStatus.진행상태); // 강좌 상태를 진행 중으로 변경
         lectureRepository.save(lecture);
     }
 }

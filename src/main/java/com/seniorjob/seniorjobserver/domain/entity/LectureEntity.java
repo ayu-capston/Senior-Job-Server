@@ -15,26 +15,55 @@ import java.time.LocalDateTime;
 public class LectureEntity extends TimeEntity {
 
     public enum LectureStatus {
-        AVAILABLE,    // 신청 가능 상태
-        WAITING,      // 개설 대기 상태
-        ONGOING,      // 진행 상태
-        WITHDRAWN,    // 철회 상태
-        COMPLETED     // 완료 상태
+        신청가능상태,
+        개설대기상태,
+        진행상태,
+        철회상태,
+        완료상태
+    }
+
+    private Boolean recruitmentClosed;
+
+    // 강좌의 모집 마감 여부를 반환하는 메서드
+    public boolean isRecruitmentClosed() {
+        return Boolean.TRUE.equals(this.recruitmentClosed);
     }
 
     public void updateStatus() {
         LocalDateTime now = LocalDateTime.now();
 
-        if (now.isBefore(recruitEnd_date) && currentParticipants < maxParticipants) {
-            status = LectureStatus.AVAILABLE;
-        } else if (now.isBefore(start_date) && (now.isAfter(recruitEnd_date) || currentParticipants.equals(maxParticipants))) {
-            status = LectureStatus.WAITING;
-        } else if (now.isAfter(start_date) && now.isBefore(end_date)) {
-            status = LectureStatus.ONGOING;
-        } else if (now.isAfter(end_date)) {
-            status = LectureStatus.COMPLETED;
-        } else if (now.isAfter(recruitEnd_date) && status.equals(LectureStatus.AVAILABLE)) {
-            status = LectureStatus.WITHDRAWN;
+        // 신청가능상태:
+        if (recruitEnd_date != null && now.isBefore(recruitEnd_date)
+                && start_date.isAfter(recruitEnd_date)
+                && end_date.isAfter(start_date)
+                && (currentParticipants == null || currentParticipants < maxParticipants)) {
+            status = LectureStatus.신청가능상태;
+            return;
+        }
+
+        // 개설대기상태:
+        if (recruitEnd_date != null && (now.isAfter(recruitEnd_date) || isRecruitmentClosed())) {
+            status = LectureStatus.개설대기상태;
+            return;
+        }
+
+        // 진행상태:
+        if (start_date != null && end_date != null && isRecruitmentClosed() && now.isAfter(start_date) && now.isBefore(end_date)) {
+            status = LectureStatus.진행상태;
+            return;
+        }
+
+        // 철회상태:
+        if (recruitEnd_date != null && now.isAfter(recruitEnd_date) && status != LectureStatus.개설대기상태 && status != LectureStatus.진행상태
+                && !isRecruitmentClosed()) {
+            status = LectureStatus.철회상태;
+            return;
+        }
+
+        // 완료상태:
+        if (end_date != null && now.isAfter(end_date)) {
+            status = LectureStatus.완료상태;
+            return;
         }
     }
 
@@ -42,7 +71,7 @@ public class LectureEntity extends TimeEntity {
     @GeneratedValue(strategy= GenerationType.IDENTITY)
     private Long create_id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "uid", referencedColumnName = "uid")
     private UserEntity user;
 
@@ -88,9 +117,9 @@ public class LectureEntity extends TimeEntity {
     @Column(name = "end_date", columnDefinition = "datetime")
     private LocalDateTime end_date;
 
-    @Column(name = "status")
     @Enumerated(EnumType.STRING)
-    private LectureStatus status = LectureStatus.AVAILABLE;
+    @Column(name = "status",nullable = false)
+    private LectureStatus status = LectureStatus.신청가능상태;
 
     @Column(name = "region")
     private String region;
@@ -105,12 +134,14 @@ public class LectureEntity extends TimeEntity {
     @Column(name = "recruitEnd_date", columnDefinition = "datetime")
     private LocalDateTime recruitEnd_date;
 
+
     @Builder
-    public LectureEntity(Long create_id, String creator, Integer maxParticipants, Integer currentParticipants, String category,
+    public LectureEntity(Long create_id, UserEntity user, String creator, Integer maxParticipants, Integer currentParticipants, String category,
                          String bank_name, String account_name, String account_number, Integer price, String title, String content,
                          String cycle, Integer count, LocalDateTime start_date, LocalDateTime end_date, String region, String image_url,
                          LocalDateTime createdDate, LocalDateTime recruitEnd_date) {
         this.create_id = create_id;
+        this.user = user;
         this.creator = creator;
         this.maxParticipants = maxParticipants;
         this.currentParticipants = currentParticipants;
@@ -126,7 +157,7 @@ public class LectureEntity extends TimeEntity {
         this.start_date = start_date;
         this.end_date = end_date;
         this.region = region;
-        this.status = LectureStatus.AVAILABLE;
+        this.status = LectureStatus.신청가능상태;
         this.image_url = image_url;
         this.createdDate = createdDate;
         this.recruitEnd_date = recruitEnd_date;
