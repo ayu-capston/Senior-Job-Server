@@ -4,11 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.seniorjob.seniorjobserver.repository.LectureRepository;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import com.seniorjob.seniorjobserver.domain.entity.LectureEntity;
 import com.seniorjob.seniorjobserver.domain.entity.UserEntity;
@@ -121,11 +118,22 @@ public class LectureController {
 
 	// 강좌전체조회API
 	// GET /api/lectures
-	@GetMapping
-	public ResponseEntity<List<LectureDto>> getAllLectures() {
+	@GetMapping("/all")
+	public ResponseEntity<Object> getAllLectures() {
 		List<LectureDto> lectureList = lectureService.getAllLectures();
+
+		if (lectureList.isEmpty()) {
+			return new ResponseEntity<>("현재 강좌가 존재하지 않습니다!ㅠㅠ", HttpStatus.NOT_FOUND);
+		}
+
 		for (LectureDto lectureDto : lectureList) {
-			LectureEntity.LectureStatus status = lectureService.getLectureStatus(lectureDto.getCreate_id());
+			LectureEntity.LectureStatus status;
+			try {
+				status = lectureService.getLectureStatus(lectureDto.getCreate_id());
+			} catch (IllegalArgumentException e) {
+				log.error("Invalid LectureStatus value: ", e);
+				continue;
+			}
 			lectureDto.setStatus(status);
 		}
 		return ResponseEntity.ok(lectureList);
@@ -134,14 +142,26 @@ public class LectureController {
 	// 개설된강좌삭제API
 	// Delete /api/lectures/{id}
 	@DeleteMapping("/{id}")
-	public ResponseEntity<Void> deleteLecture(@PathVariable("id") Long id) {
+	public ResponseEntity<String> deleteLecture(@PathVariable("id") Long id, @AuthenticationPrincipal UserDetails userDetails) {
+
+		UserEntity currentUser = userRepository.findByPhoneNumber(userDetails.getUsername())
+						.orElseThrow(()-> new UsernameNotFoundException("User not find Exception"));
+
+		LectureEntity lectureEntity = lectureRepository.findById(id)
+						.orElseThrow(()-> new RuntimeException("강좌 아이디를 찾지 못함 : " + id));
+
+		if(!lectureEntity.getUser().equals(currentUser)){
+			throw new RuntimeException("해당 강좌를 삭제할 권한이 없습니다.");
+		}
+
 		lectureService.deleteLecture(id);
-		return ResponseEntity.noContent().build();
+		String successMessage = currentUser.getName() + "님의 " + id + "번 강좌가 정상적으로 삭제되었습니다!";
+		return ResponseEntity.ok(successMessage);
 	}
 
 	// 개설된강좌상세정보API
-	// GET /api/lectures/{id}
-	@GetMapping("/{id}")
+	// GET /api/lectures/detail/{id}
+	@GetMapping("/detail/{id}")
 	public ResponseEntity<LectureDto> getDetailLectureById(@PathVariable("id") Long id) {
 		LectureDto lecture = lectureService.getDetailLectureById(id);
 		if (lecture != null) {
@@ -154,9 +174,38 @@ public class LectureController {
 	}
 
 	// 세션로그인후 자신이 개설한 강좌목록 전체조회API
+	@GetMapping("/myLectureAll")
+	public ResponseEntity<?> getMyLectureAll(@AuthenticationPrincipal UserDetails userDetails) {
+		UserEntity currentUser = userRepository.findByPhoneNumber(userDetails.getUsername())
+				.orElseThrow(() -> new UsernameNotFoundException("유저를 찾을 수 없습니다."));
+		List<LectureDto> myLectureAll = lectureService.getMyLectureAll(currentUser.getUid());
+
+		if (myLectureAll.isEmpty()) {
+			return ResponseEntity.ok("개설된 강좌가 없습니다.");
+		}
+
+		return ResponseEntity.ok(myLectureAll);
+	}
 
 	// 세션로그인후 자신이 개설한 강좌 상세보기API
+	@GetMapping("/myLectureDetail/{id}")
+	public ResponseEntity<LectureDto> getMyLectureDetail(
+			@PathVariable("id") Long id,
+			@AuthenticationPrincipal UserDetails userDetails
+	) {
+		UserEntity currentUser = userRepository.findByPhoneNumber(userDetails.getUsername())
+				.orElseThrow(() -> new UsernameNotFoundException("유저를 찾을 수 없습니다."));
 
+		LectureDto lecture = lectureService.getMyLectureDetail(id, currentUser.getUid());
+
+		if (lecture != null) {
+			LectureEntity.LectureStatus status = lectureService.getLectureStatus(id);
+			lecture.setStatus(status);
+			return ResponseEntity.ok(lecture);
+		} else {
+			return ResponseEntity.notFound().build();
+		}
+	}
 
 	// 강좌최신순/오래된순 정렬
 	// GET /api/lectures/sort/latest?descending=true

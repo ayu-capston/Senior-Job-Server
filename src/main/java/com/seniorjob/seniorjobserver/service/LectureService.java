@@ -9,7 +9,6 @@ import com.seniorjob.seniorjobserver.domain.entity.LectureEntity.LectureStatus;
 import com.seniorjob.seniorjobserver.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
@@ -124,8 +123,23 @@ public class LectureService {
     }
 
     // 세션로그인후 자신이 개설한 강좌목록 전체조회
+    public List<LectureDto> getMyLectureAll(Long userId){
+        UserEntity user = userRepository.findById(userId).orElseThrow(()-> new UsernameNotFoundException("유저를 찾을 수 없습니다."));
+        List<LectureEntity> myLectureAll = lectureRepository.findAllByUser(user);
+        return myLectureAll.stream().map(this::convertToDto).collect(Collectors.toList());
+    }
 
     // 세션로그인후 자신이 개설한 강좌 상세보기
+    public LectureDto getMyLectureDetail(Long id, Long userId) {
+        LectureEntity lectureEntity = lectureRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("강좌아이디 찾을 수 없습니다.. create_id: " + id));
+
+        if (!lectureEntity.getUser().getUid().equals(userId)) {
+            throw new RuntimeException("해당 강좌를 조회할 권한이 없습니다.");
+        }
+
+        return convertToDto(lectureEntity);
+    }
 
     // 강좌검색 : 제목
     public List<LectureDto> searchLecturesByTitle(String title) {

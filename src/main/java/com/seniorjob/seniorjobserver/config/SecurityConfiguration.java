@@ -24,19 +24,16 @@ import java.io.PrintWriter;
 @Configuration
 @EnableWebSecurity
 public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
-
     @Autowired
     private UserDetailsService userDetailsService;
-
     @Autowired
     private UserRepository userRepository;
-
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         http
                 .authorizeRequests()
-                .antMatchers("/api/users/join", "/api/users/all", "/api/lectureapply/apply", "/api/lectureapply/close", "/api/users/login", "/api/users/detail").permitAll()
-                .antMatchers( "/api/users/update", "/api/lectures", "/api/lectures/**").authenticated()
+                .antMatchers("/api/users/join", "/api/users/all", "/api/users/login", "/api/lectures/all", "/api/lectures/detail/**", "/api/lectures/search", "/api/lectures/sort/**", "/api/lectures/paging", "/api/lectureapply/list").permitAll()
+                .antMatchers( "/api/users/update", "/api/lectures", "/api/lectures/**", "/api/lectureapply/apply/**", "/api/lectureapply/close", "/api/lectures/myLectureAll", "api/lectures/myLectureDetail/**", "aip/lectureapply/cancel/**", "/api/lectureapply/close", "/api/lectureapply/approve").authenticated()
                 .anyRequest().authenticated()
                 .and()
                 .httpBasic()
