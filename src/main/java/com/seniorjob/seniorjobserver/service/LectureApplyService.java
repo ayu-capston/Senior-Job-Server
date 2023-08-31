@@ -8,6 +8,7 @@ import com.seniorjob.seniorjobserver.repository.LectureApplyRepository;
 import com.seniorjob.seniorjobserver.repository.LectureRepository;
 import com.seniorjob.seniorjobserver.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
@@ -30,7 +31,7 @@ public class LectureApplyService {
     }
 
     // 강좌 참여 신청
-    public void applyForLecture(Long userId, Long lectureId, String applyReason) {
+    public LectureApplyEntity applyForLecture(Long userId, Long lectureId, String applyReason) {
         UserEntity user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다. id: " + userId));
 
@@ -62,23 +63,25 @@ public class LectureApplyService {
         lecture.increaseCurrentParticipants();
         lectureApply.setLectureApplyStatus(LectureApplyEntity.LectureApplyStatus.승인);
         lectureApplyRepository.save(lectureApply);
+        return lectureApply;
     }
 
     // 강좌참여신청취소
-    public String cancelLectureApply(Long userId, Long lectureId) {
+    public LectureApplyEntity cancelLectureApply(Long userId, Long lectureId) {
         UserEntity user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
 
         LectureEntity lecture = lectureRepository.findById(lectureId)
                 .orElseThrow(() -> new RuntimeException("강좌를 찾을 수 없습니다. id: " + lectureId));
 
-        LectureApplyEntity lectureApply = (LectureApplyEntity) lectureApplyRepository.findByUserAndLecture(user, lecture)
+        LectureApplyEntity lectureApply = lectureApplyRepository.findByUserAndLecture(user, lecture)
                 .orElseThrow(() -> new RuntimeException("신청된 강좌를 찾을 수 없습니다. userId: " + userId + ", lectureId: " + lectureId));
 
         lecture.decreaseCurrentParticipants();
+
         lectureApplyRepository.delete(lectureApply);
 
-        return "강좌 신청이 취소되었습니다.";
+        return lectureApply;
     }
 
     // 해당 강좌에 신청한 회원 목록 조회
@@ -97,10 +100,19 @@ public class LectureApplyService {
                 .collect(Collectors.toList());
     }
 
-    // 회원목록에서 승인이 된 회원들을 일괄 모집마감하는 api
-    public ResponseEntity<String> closeLectureApply(Long lectureId) {
+    // 기존 : 회원목록에서 승인이 된 회원들을 일괄 모집마감하는 api
+    // 로그인된 회원이 개설한 강좌중 하나의 강좌를 골라 회원목록에서 승인이 된 회원들을 일괄 모집마감하는 API
+    public ResponseEntity<String> closeLectureApply(Long lectureId, Long userId) {
         LectureEntity lecture = lectureRepository.findById(lectureId)
                 .orElseThrow(() -> new RuntimeException("해당 강좌를 찾을 수 없습니다. id: " + lectureId));
+
+        UserEntity user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다. id: " + userId));
+
+        // 로그인된 사용자가 강좌를 개설한 사용자인지 확인
+        if (!lecture.getUser().getUid().equals(user.getUid())) {
+            return ResponseEntity.badRequest().body("이 강좌를 개설한 사용자만 모집을 마감할 수 있습니다.");
+        }
 
         List<LectureApplyEntity> approvedApplicants = lectureApplyRepository.findByLectureAndLectureApplyStatus(lecture, LectureApplyEntity.LectureApplyStatus.승인);
 
@@ -120,14 +132,19 @@ public class LectureApplyService {
         return ResponseEntity.ok("일괄 모집마감이 완료되었습니다.");
     }
 
-
     // 강좌참여신청 승인 상태 개별 변경
-    public void updateLectureApplyStatus(Long userId, Long lectureId, LectureApplyEntity.LectureApplyStatus status) {
+    // 로그인된 회원이 개설한 강좌 참여신청 승인 상태 개별 변경 API로 수정
+    public void updateLectureApplyStatus(Long userId, Long lectureId, LectureApplyEntity.LectureApplyStatus status, Long loggedInUserId) {
         UserEntity user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다. id: " + userId));
 
         LectureEntity lecture = lectureRepository.findById(lectureId)
                 .orElseThrow(() -> new RuntimeException("해당 강좌를 찾을 수 없습니다. id: " + lectureId));
+
+        // 로그인된 사용자가 이 강좌의 개설자인지 확인
+        if (!lecture.getUser().getUid().equals(user.getUid())) {
+            throw new RuntimeException("이 강좌를 개설한 사용자만 승인 상태를 변경할 수 있습니다.");
+        }
 
         LectureApplyEntity lectureApply = lectureApplyRepository.findByUserAndLecture(user, lecture)
                 .orElseThrow(() -> new RuntimeException("해당 회원의 신청한 강좌를 찾을 수 없습니다."));
