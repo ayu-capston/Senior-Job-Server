@@ -11,11 +11,11 @@ import com.seniorjob.seniorjobserver.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
-
 @Service
 public class LectureProposalApplyService {
 
@@ -31,8 +31,8 @@ public class LectureProposalApplyService {
     }
 
     // 강좌제안 참여신청
-    public void applyForLectureProposal(Long userId, Long proposal_id, String applyReason){
-        UserEntity user = userRepository.findById(userId)
+    public void applyForLectureProposal(UserEntity userId, Long proposal_id, String applyReason){
+        UserEntity user = userRepository.findById(userId.getUid())
                 .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다. id: " + userId));
 
         LectureProposalEntity lectureProposal = lectureProposalRepository.findById(proposal_id)
@@ -95,7 +95,7 @@ public class LectureProposalApplyService {
     }
 
     // 강좌제안신청 승인 상태 개별 변경
-    public void updateLectureProposalApplyStatus(Long userId, Long proposalId, LectureProposalApplyEntity.LectureProposalApplyStatus status){
+    public void updateLectureProposalApplyStatus(Long userId, Long proposalId, LectureProposalApplyEntity.LectureProposalApplyStatus status, Long loggedInUserId){
         UserEntity user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다. userId : " + userId));
 
@@ -116,21 +116,12 @@ public class LectureProposalApplyService {
         lectureProposalApplyRepository.save(lectureProposalApply);
     }
 
-    // 강좌제안 목록에서 승인이 된 회원들을 일괄 모집마감
-    public ResponseEntity<String> closeLectureProposalApply(Long proposalId) {
-        LectureProposalEntity lectureProposal = lectureProposalRepository.findById(proposalId)
-                .orElseThrow(() -> new RuntimeException("강좌제안를 찾을 수 없습니다. proposalid : " + proposalId));
-
-        List<LectureProposalApplyEntity> approvedApplicants = lectureProposalApplyRepository.findByLectureProposalAndLectureProposalApplyStatus(lectureProposal, LectureProposalApplyEntity.LectureProposalApplyStatus.승인);
-
-        if(approvedApplicants.isEmpty()){
-            return ResponseEntity.badRequest().body("해당 강좌제안에 승인된 회원이 없습니다. 강좌제안ID : " + proposalId);
-        }
-
-        for(LectureProposalApplyEntity applicant : approvedApplicants){
+    // 강좌제안 목록에서 승인이 된 회원이 한명일 경우 모집마감
+    @Transactional
+    public void closeLectureProposalApply(Long proposalId, List<LectureProposalApplyEntity> approvedApplicants) {
+        for (LectureProposalApplyEntity applicant : approvedApplicants) {
             applicant.setRecruitmentClosed(true);
             lectureProposalApplyRepository.save(applicant);
         }
-        return ResponseEntity.ok("강좌제안 모집마감이 완료되었습니다.");
     }
 }

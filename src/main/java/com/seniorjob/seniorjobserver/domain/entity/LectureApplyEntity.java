@@ -30,7 +30,6 @@ public class LectureApplyEntity {
     @Column(name = "recruitment_closed")
     private Boolean recruitmentClosed;
 
-
     public enum LectureApplyStatus {
         승인,
         대기

@@ -6,7 +6,6 @@ import com.seniorjob.seniorjobserver.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -32,8 +31,16 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
     protected void configure(HttpSecurity http) throws Exception {
         http
                 .authorizeRequests()
-                .antMatchers("/api/users/join", "/api/users/all", "/api/users/login", "/api/lectures/all", "/api/lectures/detail/**", "/api/lectures/search", "/api/lectures/sort/**", "/api/lectures/paging", "/api/lectureapply/list").permitAll()
-                .antMatchers( "/api/users/update", "/api/lectures", "/api/lectures/**", "/api/lectureapply/apply/**", "/api/lectureapply/close", "/api/lectures/myLectureAll", "api/lectures/myLectureDetail/**", "aip/lectureapply/cancel/**", "/api/lectureapply/close", "/api/lectureapply/approve").authenticated()
+                .antMatchers("/api/users/join", "/api/users/all", "/api/users/login",
+                        "/api/lectures/all", "/api/lectures/detail/**", "/api/lectures/search",
+                        "/api/lectures/sort/**", "/api/lectures/paging", "/api/lectureapply/list",
+                        "/api/lectureproposal/all", "/api/lectureproposal/detail/**").permitAll()
+                .antMatchers( "/api/users/update", "/api/lectures", "/api/lectures/**",
+                        "/api/lectureapply/apply/**", "/api/lectureapply/close", "/api/lectures/myLectureAll",
+                        "api/lectures/myLectureDetail/**", "aip/lectureapply/cancel/**",
+                        "/api/lectureapply/close", "/api/lectureapply/approve", "/api/lectureproposal/apply",
+                        "/api/lectureproposal/update", "/api/lectureproposal/delete", "/api/lectureproposalapply/apply", "/api/lectureproposalapply/cancel/**", "/api/lectureproposalapply/approve",
+                        "/api/lectureproposalapply/close").authenticated()
                 .anyRequest().authenticated()
                 .and()
                 .httpBasic()
@@ -48,7 +55,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
                     PrintWriter out = response.getWriter();
                     out.println("{\"message\":\"로그인이 필요합니다.\"}");
                 })
-                .accessDeniedHandler(new CustomAccessDeniedHandler())  // 이 부분 추가
+                .accessDeniedHandler(new CustomAccessDeniedHandler())
                 .and()
                 .csrf().disable()
                 .logout()
