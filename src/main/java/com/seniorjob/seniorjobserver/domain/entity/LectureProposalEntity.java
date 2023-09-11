@@ -45,6 +45,13 @@ public class LectureProposalEntity {
     @Column(name = "current_participants")
     private Integer current_participants;
 
+    private Boolean recruitmentClosed;
+
+    // 강좌제안의 모집 마감 여부를 반환하는 메서드
+    public boolean isRecruitmentClosed() {
+        return Boolean.TRUE.equals(this.recruitmentClosed);
+    }
+
     @Column(name = "created_date", columnDefinition = "datetime DEFAULT CURRENT_TIMESTAMP", nullable = false)
     @CreatedDate
     private LocalDateTime created_date;

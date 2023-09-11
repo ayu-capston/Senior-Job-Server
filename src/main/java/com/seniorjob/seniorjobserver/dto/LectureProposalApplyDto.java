@@ -23,9 +23,9 @@ public class LectureProposalApplyDto {
     private String applyReason;
     private LectureProposalApplyEntity.LectureProposalApplyStatus lectureProposalApplyStatus;
     @JsonIgnore
-    private LocalDateTime createdDate;
-    @JsonIgnore
     private Boolean recruitmentClosed;
+    @JsonIgnore
+    private LocalDateTime createdDate;
 
     public LectureProposalApplyDto(LectureProposalApplyEntity lectureProposalApply) {
         this.le_Id = lectureProposalApply.getLe_id();
