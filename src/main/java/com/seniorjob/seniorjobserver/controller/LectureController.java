@@ -172,7 +172,7 @@ public class LectureController {
 			return ResponseEntity.notFound().build();
 		}
 	}
-
+	/*
 	// 세션로그인후 자신이 개설한 강좌목록 전체조회API - 회원으로 이동
 	@GetMapping("/myLectureAll")
 	public ResponseEntity<?> getMyLectureAll(@AuthenticationPrincipal UserDetails userDetails) {
@@ -187,7 +187,6 @@ public class LectureController {
 		return ResponseEntity.ok(myLectureAll);
 	}
 
-	/*
 
 	// 세션로그인후 자신이 개설한 강좌 상세보기API- 회원으로 이동
 	@GetMapping("/myLectureDetail/{id}")

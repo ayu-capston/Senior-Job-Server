@@ -3,7 +3,9 @@ package com.seniorjob.seniorjobserver;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
+@EnableScheduling
 @EnableJpaAuditing
 @SpringBootApplication( // aws sdk 에러 해결
         exclude = {
