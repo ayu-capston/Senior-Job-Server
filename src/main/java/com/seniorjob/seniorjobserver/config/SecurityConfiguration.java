@@ -32,7 +32,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
         http
                 .authorizeRequests()
                 .antMatchers("/api/users/join", "/api/users/all", "/api/users/login",
-                        "/api/lectures/all", "/api/lectures/detail/**", "/api/lectures/search",
+                        "/api/lectures/all", "/api/lectures/filter", "/api/lectures/detail/**", "/api/lectures/search",
                         "/api/lectures/sort/**", "/api/lectures/paging", "/api/lectureapply/list",
                         "/api/lectureproposal/all", "/api/lectureproposal/detail/**").permitAll()
                 .antMatchers( "/api/users/update", "/api/lectures", "/api/lectures/**",
