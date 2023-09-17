@@ -187,6 +187,7 @@ public class LectureController {
 		return ResponseEntity.ok(myLectureAll);
 	}
 
+	/*
 
 	// 세션로그인후 자신이 개설한 강좌 상세보기API- 회원으로 이동
 	@GetMapping("/myLectureDetail/{id}")
