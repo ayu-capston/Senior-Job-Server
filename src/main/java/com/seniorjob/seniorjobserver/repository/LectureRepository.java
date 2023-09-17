@@ -18,6 +18,6 @@ public interface LectureRepository extends JpaRepository<LectureEntity, Long> {
     Page<LectureEntity> findAll(Pageable pageable);
 
     List<LectureEntity> findAllByUser(UserEntity user);
-
+    List<LectureEntity> findByStatus(LectureEntity.LectureStatus valueOf);
 }
 

@@ -18,6 +18,8 @@ public class LectureDto {
 
     private Long create_id;
     private UserEntity user;
+
+    private String userName;
     public UserEntity getUser() {
         return this.user;
     }
@@ -62,7 +64,7 @@ public class LectureDto {
     public LectureEntity toEntity(UserEntity userEntity) {
         LectureEntity lectureEntity = LectureEntity.builder()
                 .create_id(create_id)
-                .user(this.user)
+                .user(user)
                 .creator(creator)
                 .maxParticipants(max_participants)
                 .currentParticipants(current_participants)
@@ -91,11 +93,13 @@ public class LectureDto {
     }
 
     @Builder
-    public LectureDto(Long create_id, String creator, Integer max_participants, Integer current_participants, String category,
+    public LectureDto(Long create_id,String creator, UserEntity user,String userName, Integer max_participants, Integer current_participants, String category,
                       String bank_name, String account_name, String account_number, Integer price, String title, String content,
                       String cycle, Integer count, LocalDateTime start_date, LocalDateTime end_date, String region, String image_url,
                       LocalDateTime createdDate, LocalDateTime recruitEnd_date, LectureEntity.LectureStatus status) {
         this.create_id = create_id;
+        this.user = user;
+        this.userName = userName;
         this.creator = creator;
         this.max_participants = max_participants;
         this.current_participants = current_participants;

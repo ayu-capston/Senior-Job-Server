@@ -32,7 +32,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
         http
                 .authorizeRequests()
                 .antMatchers("/api/users/join", "/api/users/all", "/api/users/login",
-                        "/api/lectures/all", "/api/lectures/detail/**", "/api/lectures/search",
+                        "/api/lectures/all", "/api/lectures/filter", "/api/lectures/detail/**", "/api/lectures/search",
                         "/api/lectures/sort/**", "/api/lectures/paging", "/api/lectureapply/list",
                         "/api/lectureproposal/all", "/api/lectureproposal/detail/**").permitAll()
                 .antMatchers( "/api/users/update", "/api/lectures", "/api/lectures/**",
@@ -63,7 +63,6 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
                 .invalidateHttpSession(true)
                 .deleteCookies("JSESSIONID")
                 .logoutSuccessHandler((request, response, authentication) -> {
-                    // ... 기존의 로그아웃 처리 코드 ...
                     try {
                         // 로그인 중인 회원이 없는 경우
                         if (authentication == null || authentication.getPrincipal() == null || "anonymousUser".equals(authentication.getPrincipal().toString())) {
