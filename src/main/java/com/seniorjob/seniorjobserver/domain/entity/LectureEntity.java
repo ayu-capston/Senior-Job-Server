@@ -72,6 +72,7 @@ public class LectureEntity extends TimeEntity {
         throw new IllegalStateException("강좌개설오류");
     }
 
+
     @Id
     @GeneratedValue(strategy= GenerationType.IDENTITY)
     private Long create_id;
