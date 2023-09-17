@@ -32,39 +32,44 @@ public class LectureEntity extends TimeEntity {
     public void updateStatus() {
         LocalDateTime now = LocalDateTime.now();
 
+        // 날짜 null 확인 예외처리
+        if (recruitEnd_date == null || start_date == null || end_date == null) {
+            throw new IllegalArgumentException("강좌 날짜 필드 중 하나 이상이 설정되지 않았습니다!!");
+        }
+
+        // 완료상태:
+        if (now.isAfter(end_date)) {
+            status = LectureStatus.완료상태;
+            return;
+        }
+
+        // 진행상태:
+        if (isRecruitmentClosed() && now.isAfter(start_date) && now.isBefore(end_date)) {
+            status = LectureStatus.진행상태;
+            return;
+        }
+
         // 신청가능상태:
-        if (recruitEnd_date != null && now.isBefore(recruitEnd_date)
-                && start_date.isAfter(recruitEnd_date)
+        if (now.isBefore(recruitEnd_date) && start_date.isAfter(recruitEnd_date)
                 && end_date.isAfter(start_date)
                 && (currentParticipants == null || currentParticipants < maxParticipants)) {
             status = LectureStatus.신청가능상태;
             return;
         }
 
-        // 개설대기상태:
-        if (recruitEnd_date != null && (now.isAfter(recruitEnd_date) || isRecruitmentClosed())) {
-            status = LectureStatus.개설대기상태;
-            return;
-        }
-
-        // 진행상태:
-        if (start_date != null && end_date != null && isRecruitmentClosed() && now.isAfter(start_date) && now.isBefore(end_date)) {
-            status = LectureStatus.진행상태;
-            return;
-        }
-
         // 철회상태:
-        if (recruitEnd_date != null && now.isAfter(recruitEnd_date) && status != LectureStatus.개설대기상태 && status != LectureStatus.진행상태
-                && !isRecruitmentClosed()) {
+        if (now.isAfter(recruitEnd_date) && now.isBefore(start_date) && currentParticipants < maxParticipants && !isRecruitmentClosed()) {
             status = LectureStatus.철회상태;
             return;
         }
 
-        // 완료상태:
-        if (end_date != null && now.isAfter(end_date)) {
-            status = LectureStatus.완료상태;
+        // 개설대기상태:
+        if (now.isAfter(recruitEnd_date) || isRecruitmentClosed()) {
+            status = LectureStatus.개설대기상태;
             return;
         }
+
+        throw new IllegalStateException("강좌개설오류");
     }
 
     @Id
