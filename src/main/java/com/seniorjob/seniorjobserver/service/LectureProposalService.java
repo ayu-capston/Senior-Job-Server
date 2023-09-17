@@ -1,12 +1,15 @@
 package com.seniorjob.seniorjobserver.service;
 
+import com.seniorjob.seniorjobserver.domain.entity.LectureEntity;
 import com.seniorjob.seniorjobserver.domain.entity.LectureProposalEntity;
 import com.seniorjob.seniorjobserver.domain.entity.UserEntity;
+import com.seniorjob.seniorjobserver.dto.LectureDto;
 import com.seniorjob.seniorjobserver.dto.LectureProposalDto;
 import com.seniorjob.seniorjobserver.repository.LectureProposalRepository;
 import com.seniorjob.seniorjobserver.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -59,6 +62,31 @@ public class LectureProposalService {
                 .map(LectureProposalDto::new)
                 .collect(Collectors.toList());
     }
+
+    // 현재 로그인한 사용자가 제안한 강좌 목록 조회
+    public List<LectureProposalDto> getMyProposalAll(Long userId) {
+        UserEntity user = userRepository.findById(userId)
+                .orElseThrow(() -> new UsernameNotFoundException("유저를 찾을 수 없습니다."));
+        List<LectureProposalEntity> myProposalAll = lectureProposalRepository.findAllByUser(user);
+        return myProposalAll.stream().map(this::convertToDto).collect(Collectors.toList());
+    }
+
+    private LectureProposalDto convertToDto(LectureProposalEntity lectureProposalEntity) {
+        return LectureProposalDto.builder()
+                .proposalId(lectureProposalEntity.getProposal_id())
+                .userName(lectureProposalEntity.getUser().getName())
+                .currentParticipants(lectureProposalEntity.getCurrent_participants())
+                .category(lectureProposalEntity.getCategory())
+                .region(lectureProposalEntity.getRegion())
+                .price(lectureProposalEntity.getPrice())
+                .title(lectureProposalEntity.getTitle())
+                .content(lectureProposalEntity.getContent())
+                .startDate(lectureProposalEntity.getStart_date())
+                .endDate(lectureProposalEntity.getEnd_date())
+                .createDate(lectureProposalEntity.getCreated_date())
+                .build();
+    }
+
 
     // 제안된강좌 상세보기
     public LectureProposalDto getDetail(Long proposal_id) {
