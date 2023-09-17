@@ -15,16 +15,18 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
-
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
+
+
 
 @Service
 public class LectureService {
     private final LectureRepository lectureRepository;
     private final UserRepository userRepository;
     private static final Logger log = LoggerFactory.getLogger(LectureController.class);
+
 
     // 모든강좌조회
     public LectureService(LectureRepository lectureRepository, UserRepository userRepository) {
@@ -185,8 +187,8 @@ public class LectureService {
     private LectureDto convertToDto(LectureEntity lectureEntity) {
         return LectureDto.builder()
                 .create_id(lectureEntity.getCreate_id())
-
                 .creator(lectureEntity.getCreator())
+                .userName(lectureEntity.getUser().getName())
                 .max_participants(lectureEntity.getMaxParticipants())
                 .current_participants(lectureEntity.getCurrentParticipants())
                 .category(lectureEntity.getCategory())

@@ -16,6 +16,10 @@ public class UserEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long uid;
 
+    public Long getUid() {
+        return uid;
+    }
+
     @Column(name = "encryption_code", nullable = false)
     private String encryptionCode;
 
