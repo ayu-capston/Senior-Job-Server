@@ -6,6 +6,10 @@ import com.seniorjob.seniorjobserver.domain.entity.UserEntity;
 import com.seniorjob.seniorjobserver.dto.LectureDto;
 import com.seniorjob.seniorjobserver.repository.LectureRepository;
 import com.seniorjob.seniorjobserver.domain.entity.LectureEntity.LectureStatus;
+import org.springframework.scheduling.annotation.Scheduled;
+import javax.transaction.Transactional;
+import java.time.ZoneId;
+import java.util.ArrayList;
 import com.seniorjob.seniorjobserver.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,11 +19,10 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
-
-
 
 @Service
 public class LectureService {
@@ -27,8 +30,6 @@ public class LectureService {
     private final UserRepository userRepository;
     private static final Logger log = LoggerFactory.getLogger(LectureController.class);
 
-
-    // 모든강좌조회
     public LectureService(LectureRepository lectureRepository, UserRepository userRepository) {
         this.lectureRepository = lectureRepository;
         this.userRepository = userRepository;
@@ -47,7 +48,46 @@ public class LectureService {
         UserEntity user = userRepository.findByPhoneNumber(currentPrincipalName)
                 .orElseThrow(() -> new RuntimeException("로그인된 사용자를 찾을 수 없습니다."));
         System.out.println("Current user: " + user); // or use a proper logger
+
         return user;
+    }
+
+    // 스케줄링
+    @Scheduled(cron = "0 * * * * *")
+    @Transactional
+    public void updateLectureStatus(){
+        log.info("Update LectureStatus");
+        List<LectureEntity> lectures = lectureRepository.findAll();
+        LocalDateTime now = LocalDateTime.now(ZoneId.of("Asia/Seoul"));
+
+        for(LectureEntity lecture : lectures){
+            LectureStatus previousStatus = lecture.getStatus(); // 이전 상태
+
+            // 철회상태: 모집 마감 요청이 없고 모집 마감 날짜가 지났다면
+            if(!lecture.isRecruitmentClosed() && now.isAfter(lecture.getRecruitEnd_date())) {
+                lecture.setStatus(LectureStatus.철회상태);
+            }
+            // 개설대기상태: 강좌 개설자가 모집 마감 요청을 했으면
+            else if(lecture.isRecruitmentClosed() && now.isBefore(lecture.getStart_date())) {
+                lecture.setStatus(LectureStatus.개설대기상태);
+            }
+            // 진행상태: 현재 상태가 개설대기상태이며, 현재 시간이 강좌 시작 날짜 이후라면
+            else if(lecture.getStatus() == LectureStatus.개설대기상태 && now.isAfter(lecture.getStart_date()) && now.isBefore(lecture.getEnd_date())) {
+                lecture.setStatus(LectureStatus.진행상태);
+            }
+            // 완료상태: 진행상태에서 시간이 강좌 종료 날짜라면
+            else if(lecture.getStatus() == LectureStatus.진행상태 && now.isAfter(lecture.getEnd_date())){
+                lecture.setStatus(LectureStatus.완료상태);
+            }
+
+            // 상태가 변경되었는지 확인하고, 변경된 경우 로그를 기록
+            if(!lecture.getStatus().equals(previousStatus)) {
+                log.info("강좌 ID: " + lecture.getCreate_id() + "의 상태가 " + previousStatus + "에서 " + lecture.getStatus() + "로 변경되었습니다.");
+            }
+        }
+
+        lectureRepository.saveAll(lectures);
+        log.info("Update LectureStatus");
     }
 
     // 강좌개설
@@ -59,20 +99,21 @@ public class LectureService {
         LectureEntity lectureEntity = lectureDto.toEntity(userEntity);
         lectureEntity.setUser(userEntity);
 
-        // 시작 날짜가 현재 날짜 이전인 경우, 예외
-        if (startDate.isBefore(currentDate)) {
-            throw new IllegalArgumentException("시작 날짜는 현재 날짜 이후로 설정해야 합니다.");
+        // 시작 날짜 조건 확인
+        if (startDate.isBefore(currentDate) || startDate.isBefore(recruitEndDate)) {
+            throw new IllegalArgumentException("시작 날짜는 현재 날짜 이후 그리고 모집 마감 날짜 이후로 설정되어야 합니다.");
         }
 
-        // 종료 날짜가 오늘 날짜 이후이고 시작 날짜 이후인 경우, 예외
+        // 종료 날짜 조건 확인
         if (endDate.isBefore(currentDate) || endDate.isBefore(startDate)) {
-            throw new IllegalArgumentException("종료 날짜는 오늘 이후의 날짜이고 시작 날짜 이후로 설정해야 합니다.");
+            throw new IllegalArgumentException("종료 날짜는 오늘 이후의 날짜이고 시작 날짜 이후로 설정되어야 합니다.");
         }
 
-        // 강좌 모집 마감 날짜가 시작 날짜 이전인 경우, 예외
-        if (recruitEndDate.isAfter(startDate)) {
-            throw new IllegalArgumentException("강좌 모집 마감 날짜는 시작 날짜 이전으로 설정해야 합니다.");
+        // 강좌 모집 마감 날짜 조건 확인
+        if (recruitEndDate.isBefore(currentDate) || recruitEndDate.isAfter(startDate)) {
+            throw new IllegalArgumentException("강좌 모집 마감 날짜는 현재 날짜 이후 그리고 시작 날짜 이전으로 설정되어야 합니다.");
         }
+
         // 강좌모집인원은 50명을 초과할수 없다. 초과할경우 예외
         if (lectureDto.getMax_participants() > 50) {
             throw new IllegalArgumentException("모집 인원은 50명을 초과할 수 없습니다.");
@@ -82,7 +123,7 @@ public class LectureService {
         lectureEntity.updateStatus();
         LectureEntity savedLecture = lectureRepository.save(lectureEntity);
 
-        return convertToDto(savedLecture);
+        return convertToDto(lectureEntity);
     }
 
     // 로그인된 유저의 강좌수정
@@ -143,19 +184,19 @@ public class LectureService {
         return convertToDto(lectureEntity);
     }
 
+    // 강좌ID기반 강좌상태 가져오는 메서드
+    public LectureEntity.LectureStatus getLectureStatus(Long create_id) {
+        LectureEntity lectureEntity = lectureRepository.findById(create_id)
+                .orElseThrow(() -> new RuntimeException("강좌아이디 찾지못함 create_id: " + create_id));
+        return lectureEntity.getStatus();
+    }
+
     // 강좌검색 : 제목
     public List<LectureDto> searchLecturesByTitle(String title) {
         List<LectureEntity> lectureEntities = lectureRepository.findByTitleContaining(title);
         return lectureEntities.stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
-    }
-
-    // 강좌ID기반 강좌상태 가져오는 메서드
-    public LectureEntity.LectureStatus getLectureStatus(Long create_id) {
-        LectureEntity lectureEntity = lectureRepository.findById(create_id)
-                .orElseThrow(() -> new RuntimeException("강좌아이디 찾지못함 create_id: " + create_id));
-        return lectureEntity.getStatus();
     }
 
     // 강좌정렬
@@ -184,11 +225,60 @@ public class LectureService {
         return lectureList;
     }
 
+    // 지역검색
+    public List<LectureDto> filterRegion(List<LectureDto> lectureList, String region){
+        List<LectureDto> filteredList = new ArrayList<>();
+        for(LectureDto lectureDto : lectureList){
+            if (lectureDto.getRegion().equals(region)){
+                filteredList.add(lectureDto);
+            }
+        }
+        return filteredList;
+    }
+
+    // 강좌상태검색
+    public List<LectureDto> filterStatus(List<LectureDto> lectureList, LectureEntity.LectureStatus status) {
+        return lectureList.stream()
+                .filter(lecture -> lecture.getStatus() == status)
+                .collect(Collectors.toList());
+    }
+
+    // 필터링 : 제목검색 -> 최신순,오래된순, 가격높은순, 가격낮은순, 인기순, 지역(시,군),
+    // 상좌상태(모집중 = 신청가능상태,  개설대기중 = 개설대기상태, 진행중 = 진행상태), 카테고리
+    public List<LectureDto> filterLectures(List<LectureDto> lectureList, String filter, boolean descending) {
+        switch (filter){
+            case "latest":
+                return sortLecturesByCreatedDate(lectureList, descending);
+            case "price":
+                return sortLecturesByPrice(lectureList, descending);
+            case  "popularity":
+                return sortLecturesByPopularity(lectureList, descending);
+            default:
+                throw new IllegalArgumentException("잘못된 필터조건");
+        }
+    }
+
+    // 필터링 : 카테고리
+    public List<LectureDto> filterCategory(List<LectureDto> lectureList, String category) {
+        List<LectureDto> filteredList = new ArrayList<>();
+        for (LectureDto lectureDto : lectureList){
+            if(lectureDto.getCategory().equals(category)){
+                filteredList.add(lectureDto);
+            }
+        }
+        return filteredList;
+    }
+
+    //페이징
+    public Page<LectureEntity> getLectures(Pageable pageable) {
+        return lectureRepository.findAll(pageable);
+    }
+
     private LectureDto convertToDto(LectureEntity lectureEntity) {
         return LectureDto.builder()
                 .create_id(lectureEntity.getCreate_id())
+
                 .creator(lectureEntity.getCreator())
-                .userName(lectureEntity.getUser().getName())
                 .max_participants(lectureEntity.getMaxParticipants())
                 .current_participants(lectureEntity.getCurrentParticipants())
                 .category(lectureEntity.getCategory())
@@ -210,11 +300,6 @@ public class LectureService {
                 .build();
     }
 
-    //페이징
-    public Page<LectureEntity> getLectures(Pageable pageable) {
-        return lectureRepository.findAll(pageable);
-    }
-
     // 강좌상태
     // 강좌 모집 마감 기능
     public void closeRecruitment(Long lectureId) {
@@ -223,6 +308,7 @@ public class LectureService {
 
         // 이미 모집 마감되었거나 시작된 강좌인 경우 예외 처리
         if (lecture.getStatus() == LectureStatus.개설대기상태 || lecture.getStatus() == LectureStatus.진행상태) {
+            lecture.setRecruitmentClosed(true);
             throw new RuntimeException("이미 모집 마감되었거나 진행 중인 강좌입니다.");
         }
 

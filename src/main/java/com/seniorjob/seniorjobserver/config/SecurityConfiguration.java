@@ -63,7 +63,6 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
                 .invalidateHttpSession(true)
                 .deleteCookies("JSESSIONID")
                 .logoutSuccessHandler((request, response, authentication) -> {
-                    // ... 기존의 로그아웃 처리 코드 ...
                     try {
                         // 로그인 중인 회원이 없는 경우
                         if (authentication == null || authentication.getPrincipal() == null || "anonymousUser".equals(authentication.getPrincipal().toString())) {

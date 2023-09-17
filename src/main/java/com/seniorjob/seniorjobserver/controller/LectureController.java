@@ -26,8 +26,9 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.NoSuchElementException;
 
 @RestController
 @RequestMapping("/api/lectures")
@@ -172,7 +173,7 @@ public class LectureController {
 			return ResponseEntity.notFound().build();
 		}
 	}
-	/*
+
 	// 세션로그인후 자신이 개설한 강좌목록 전체조회API - 회원으로 이동
 	@GetMapping("/myLectureAll")
 	public ResponseEntity<?> getMyLectureAll(@AuthenticationPrincipal UserDetails userDetails) {
@@ -186,7 +187,6 @@ public class LectureController {
 
 		return ResponseEntity.ok(myLectureAll);
 	}
-
 
 	// 세션로그인후 자신이 개설한 강좌 상세보기API- 회원으로 이동
 	@GetMapping("/myLectureDetail/{id}")
@@ -208,67 +208,134 @@ public class LectureController {
 		}
 	}
 
-	 */
-
-	// 강좌최신순/오래된순 정렬
-	// GET /api/lectures/sort/latest?descending=true
-	// GET /api/lectures/sort/latest?descending=false
-	@GetMapping("/sort/createdDate")
-	public ResponseEntity<List<LectureDto>> sortLecturesByCreatedDate(@RequestParam(value = "descending", defaultValue = "false") boolean descending) {
-		List<LectureDto> lectureList = lectureService.getAllLectures();
-		lectureList = lectureService.sortLecturesByCreatedDate(lectureList, descending);
-		return ResponseEntity.ok(lectureList);
-	}
-
-	// 강좌가격순 정렬
-	// GET /api/lectures/sort/price?descending=true
-	// GET /api/lectures/sort/price?descending=false
-	@GetMapping("/sort/price")
-	public ResponseEntity<List<LectureDto>> sortLecturesByPrice(@RequestParam(value = "descending", defaultValue = "false") boolean descending) {
-		List<LectureDto> lectureList = lectureService.getAllLectures();
-		lectureList = lectureService.sortLecturesByPrice(lectureList, descending);
-		return ResponseEntity.ok(lectureList);
-	}
-
-	// 강좌 인기순 정렬
-	// GET /api/lectures/sort/popularity?descending=true
-	// GET /api/lectures/sort/popularity?descending=false
-	@GetMapping("/sort/popularity")
-	public ResponseEntity<List<LectureDto>> sortLecturesByPopularity(@RequestParam(value = "descending", defaultValue = "false") boolean descending) {
-		List<LectureDto> lectureList = lectureService.getAllLectures();
-		lectureList = lectureService.sortLecturesByPopularity(lectureList, descending);
-		return ResponseEntity.ok(lectureList);
-	}
-
-	// 강좌제목검색API
-	// Get /api/lectures/search?title={문자}
-	@GetMapping("/search")
-	public ResponseEntity<List<LectureDto>> searchLecturesByTitle(@RequestParam("title") String title){
-		List<LectureDto> lectureList = lectureService.searchLecturesByTitle(title);
-		for(LectureDto lectureDto : lectureList){
-			LectureEntity.LectureStatus status = lectureService.getLectureStatus(lectureDto.getCreate_id());
-			lectureDto.setStatus(status);
-		}
-		return ResponseEntity.ok(lectureList);
-	}
-
-	// 페이징
-	// GET /api/lectures/paging?page={no}&size={no}
-	@GetMapping("/paging")
-	public ResponseEntity<Page<LectureDto>> getLecturesWithPagination(
+	// 필터링
+	// api/lectures/filter == 모든강좌조회
+	// api/lectures/filter?title="강좌제목" == 제목만으로 검색
+	// api/lectures/filter?title="강좌제목"&filter=최신순
+	@GetMapping("/filter")
+	public ResponseEntity<Page<LectureDto>> filterAndPaginateLectures(
+			@RequestParam(value = "title", required = false) String title,
+			@RequestParam(value = "filter", required = false) String filter,
+			@RequestParam(value = "region", required = false) String region,
+			@RequestParam(value = "status", required = false) String status,
+			@RequestParam(value = "category", required = false) String category,
 			@RequestParam(defaultValue = "0", name = "page") int page,
-			@RequestParam(defaultValue = "12", name = "size") int size) {
+			@RequestParam(defaultValue = "12", name = "size") int size,
+			@RequestParam(value = "descending", defaultValue = "false") boolean descending) {
+
+		List<LectureDto> lectureList = new ArrayList<>();
+		// 필터링 : 제목 검색
+		if (title != null && !title.isEmpty()) {
+			lectureList = lectureService.searchLecturesByTitle(title);
+		} else {
+			lectureList = lectureService.getAllLectures();
+		}
+		// 필터링 : 조건에 따라 lectureList 필터링
+		if (filter != null && !filter.isEmpty()) {
+			lectureList = lectureService.filterLectures(lectureList, filter, descending);
+		}
+		// 필터링 : 지역 검색
+		if(region != null && !region.isEmpty()){
+			lectureList = lectureService.filterRegion(lectureList, region);
+		}
+
+		// 필터링 : 모집중 = 신청가능상태, 개설대기중 = 개설대기상태, 진행중 = 진행상태
+		if (status != null && !status.isEmpty()) {
+			LectureEntity.LectureStatus lectureStatus;
+
+			switch (status) {
+				case "모집중":
+					lectureStatus = LectureEntity.LectureStatus.신청가능상태;
+					break;
+				case "개설대기중":
+					lectureStatus = LectureEntity.LectureStatus.개설대기상태;
+					break;
+				case "진행중":
+					lectureStatus = LectureEntity.LectureStatus.진행상태;
+					break;
+				default:
+					throw new IllegalArgumentException("잘못된 상태 키워드입니다.");
+			}
+
+			lectureList = lectureService.filterStatus(lectureList, lectureStatus);
+		}
+		// 필터링 : 카테고리명
+		if(category != null && !category.isEmpty()){
+			lectureList = lectureService.filterCategory(lectureList, category);
+		}
+
+		// 검색결과에 해당하는 강좌가 없을경우
+		if (lectureList.isEmpty()) {
+			throw new NoSuchElementException("검색결과에 해당하는 강좌가 없습니다.ㅠㅠ");
+		}
+
+		// 페이징
 		Pageable pageable = PageRequest.of(page, size);
-		Page<LectureEntity> lecturePage = lectureService.getLectures(pageable);
-
-		List<LectureDto> lectureDtoList = lecturePage.getContent().stream()
-				.map(this::convertToDto)
-				.collect(Collectors.toList());
-
-		Page<LectureDto> pagedLectureDto = new PageImpl<>(lectureDtoList, pageable, lecturePage.getTotalElements());
-
+		int start = (int) pageable.getOffset();
+		int end = Math.min((start + pageable.getPageSize()), lectureList.size());
+		Page<LectureDto> pagedLectureDto = new PageImpl<>(lectureList.subList(start, end), pageable, lectureList.size());
 		return ResponseEntity.ok(pagedLectureDto);
 	}
+
+//	// 강좌최신순/오래된순 정렬
+//	// GET /api/lectures/sort/latest?descending=true
+//	// GET /api/lectures/sort/latest?descending=false
+//	@GetMapping("/sort/createdDate")
+//	public ResponseEntity<List<LectureDto>> sortLecturesByCreatedDate(@RequestParam(value = "descending", defaultValue = "false") boolean descending) {
+//		List<LectureDto> lectureList = lectureService.getAllLectures();
+//		lectureList = lectureService.sortLecturesByCreatedDate(lectureList, descending);
+//		return ResponseEntity.ok(lectureList);
+//	}
+//
+//	// 강좌가격순 정렬
+//	// GET /api/lectures/sort/price?descending=true
+//	// GET /api/lectures/sort/price?descending=false
+//	@GetMapping("/sort/price")
+//	public ResponseEntity<List<LectureDto>> sortLecturesByPrice(@RequestParam(value = "descending", defaultValue = "false") boolean descending) {
+//		List<LectureDto> lectureList = lectureService.getAllLectures();
+//		lectureList = lectureService.sortLecturesByPrice(lectureList, descending);
+//		return ResponseEntity.ok(lectureList);
+//	}
+//
+//	// 강좌 인기순 정렬
+//	// GET /api/lectures/sort/popularity?descending=true
+//	// GET /api/lectures/sort/popularity?descending=false
+//	@GetMapping("/sort/popularity")
+//	public ResponseEntity<List<LectureDto>> sortLecturesByPopularity(@RequestParam(value = "descending", defaultValue = "false") boolean descending) {
+//		List<LectureDto> lectureList = lectureService.getAllLectures();
+//		lectureList = lectureService.sortLecturesByPopularity(lectureList, descending);
+//		return ResponseEntity.ok(lectureList);
+//	}
+//
+//	// 강좌제목검색API
+//	// Get /api/lectures/search?title={문자}
+//	@GetMapping("/search")
+//	public ResponseEntity<List<LectureDto>> searchLecturesByTitle(@RequestParam("title") String title){
+//		List<LectureDto> lectureList = lectureService.searchLecturesByTitle(title);
+//		for(LectureDto lectureDto : lectureList){
+//			LectureEntity.LectureStatus status = lectureService.getLectureStatus(lectureDto.getCreate_id());
+//			lectureDto.setStatus(status);
+//		}
+//		return ResponseEntity.ok(lectureList);
+//	}
+
+//	// 페이징
+//	// GET /api/lectures/paging?page={no}&size={no}
+//	@GetMapping("/paging")
+//	public ResponseEntity<Page<LectureDto>> getLecturesWithPagination(
+//			@RequestParam(defaultValue = "0", name = "page") int page,
+//			@RequestParam(defaultValue = "12", name = "size") int size) {
+//		Pageable pageable = PageRequest.of(page, size);
+//		Page<LectureEntity> lecturePage = lectureService.getLectures(pageable);
+//
+//		List<LectureDto> lectureDtoList = lecturePage.getContent().stream()
+//				.map(this::convertToDto)
+//				.collect(Collectors.toList());
+//
+//		Page<LectureDto> pagedLectureDto = new PageImpl<>(lectureDtoList, pageable, lecturePage.getTotalElements());
+//
+//		return ResponseEntity.ok(pagedLectureDto);
+//	}
 
 	private LectureDto convertToDto(LectureEntity lectureEntity) {
 		if (lectureEntity == null)
