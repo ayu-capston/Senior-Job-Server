@@ -8,7 +8,6 @@ import com.seniorjob.seniorjobserver.repository.LectureApplyRepository;
 import com.seniorjob.seniorjobserver.repository.LectureRepository;
 import com.seniorjob.seniorjobserver.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
@@ -152,4 +151,39 @@ public class LectureApplyService {
         lectureApply.setLectureApplyStatus(status);
         lectureApplyRepository.save(lectureApply);
     }
+
+    // 신청강좌 - 목록
+    public List<LectureApplyDto> getMyAppliedLectures(Long userId) {
+        UserEntity user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다. id: " + userId));
+
+        List<LectureApplyEntity> myApplyLectures = lectureApplyRepository.findByUser(user);
+
+        if (myApplyLectures.isEmpty()) {
+            throw new RuntimeException("신청하신 강좌가 없습니다..");
+        }
+        return myApplyLectures.stream()
+                .map(LectureApplyDto::new)
+                .collect(Collectors.toList());
+    }
+
+    // 신청강좌 - 신청이유수정
+    public LectureApplyEntity updateApplyReason(Long userId, Long lectureId, String newApplyReason) {
+        UserEntity user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다. id: " + userId));
+
+        LectureEntity lecture = lectureRepository.findById(lectureId)
+                .orElseThrow(() -> new RuntimeException("해당 강좌를 찾을 수 없습니다. id: " + lectureId));
+
+        LectureApplyEntity lectureApply = lectureApplyRepository.findByUserAndLecture(user, lecture)
+                .orElseThrow(() -> new RuntimeException("신청된 강좌를 찾을 수 없습니다. userId: " + userId + ", lectureId: " + lectureId));
+
+        if (lecture.getStatus() != LectureEntity.LectureStatus.신청가능상태) {
+            throw new RuntimeException("해당 강좌는 '신청가능상태'가 아니기 때문에 신청이유를 수정할 수 없습니다.");
+        }
+
+        lectureApply.setApplyReason(newApplyReason);
+        return lectureApplyRepository.save(lectureApply);
+    }
+
 }

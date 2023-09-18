@@ -14,6 +14,7 @@ import java.time.LocalDateTime;
 public class UserDto {
     private Long uid;
     private String encryptionCode;
+    private String confirmPassword; // 비밀번호확인용 임시필드
     private String name;
     private LocalDate dateOfBirth;
     private UserEntity.Gender gender;
