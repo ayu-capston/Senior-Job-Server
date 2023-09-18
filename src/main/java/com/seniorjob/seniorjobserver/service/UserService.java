@@ -10,7 +10,6 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import javax.transaction.Transactional;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -18,7 +17,7 @@ import java.util.stream.Collectors;
 @Service
 public class UserService {
     private final UserRepository userRepository;
-    private PasswordEncoder passwordEncoder;
+    private final PasswordEncoder passwordEncoder;
 
     @Autowired
     public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder){
@@ -93,6 +92,9 @@ public class UserService {
         userRepository.save(userEntity);
         return convertToDo(userEntity);
     }
+
+    // 회원 탈퇴 및 관련 활동 삭제
+
 
     private UserDto convertToDo(UserEntity userEntity) {
         return UserDto.builder()

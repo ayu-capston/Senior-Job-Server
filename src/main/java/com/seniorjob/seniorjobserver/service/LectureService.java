@@ -22,6 +22,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
 
 @Service
@@ -193,10 +194,20 @@ public class LectureService {
 
     // 강좌검색 : 제목
     public List<LectureDto> searchLecturesByTitle(String title) {
-        List<LectureEntity> lectureEntities = lectureRepository.findByTitleContaining(title);
-        return lectureEntities.stream()
-                .map(this::convertToDto)
-                .collect(Collectors.toList());
+        List<LectureDto> lectureList = new ArrayList<>();
+        if (title.length() >= 2) { // 2글자 이상인 경우에만 검색 수행
+            List<LectureEntity> lectureEntities = lectureRepository.findByTitleContaining(title);
+            lectureList = lectureEntities.stream()
+                    .map(this::convertToDto)
+                    .collect(Collectors.toList());
+        } else {
+            throw new IllegalArgumentException("검색어는 \"2글자\" 이상 입력해주세요!");
+        }
+        // 검색 결과가 없는 경우
+        if (lectureList.isEmpty()) {
+            throw new NoSuchElementException("검색결과에 해당하는 강좌가 없습니다.ㅠㅠ");
+        }
+        return lectureList;
     }
 
     // 강좌정렬
@@ -226,12 +237,20 @@ public class LectureService {
     }
 
     // 지역검색
-    public List<LectureDto> filterRegion(List<LectureDto> lectureList, String region){
+    // 필터링 : 지역검색
+    public List<LectureDto> filterRegion(List<LectureDto> lectureList, String region) {
         List<LectureDto> filteredList = new ArrayList<>();
-        for(LectureDto lectureDto : lectureList){
-            if (lectureDto.getRegion().equals(region)){
-                filteredList.add(lectureDto);
+        if(region.length() >= 2){
+            for (LectureDto lectureDto : lectureList){
+                if (lectureDto.getRegion().contains(region)){
+                    filteredList.add(lectureDto);
+                }
             }
+        }else {
+            throw new IllegalArgumentException("검색어는 \"2글자\" 이상 입력해주세요!");
+        }
+        if(filteredList.isEmpty()){
+            throw new NoSuchElementException("검색결과에 해당하는 강좌가 없습니다..");
         }
         return filteredList;
     }

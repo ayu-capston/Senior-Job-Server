@@ -22,5 +22,7 @@ public interface LectureApplyRepository extends JpaRepository<LectureApplyEntity
     List<LectureApplyEntity> findByLectureAndLectureApplyStatus(LectureEntity lecture, LectureApplyEntity.LectureApplyStatus status);
 
     Optional<Object> findByLectureAndRecruitmentClosed(LectureEntity lecture, boolean b);
+
+    List<LectureApplyEntity> findByUser(UserEntity user);
 }
 

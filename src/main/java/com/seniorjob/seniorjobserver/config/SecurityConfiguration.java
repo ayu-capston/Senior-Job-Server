@@ -39,8 +39,12 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
                         "/api/lectureapply/apply/**", "/api/lectureapply/close", "/api/lectures/myLectureAll",
                         "api/lectures/myLectureDetail/**", "aip/lectureapply/cancel/**",
                         "/api/lectureapply/close", "/api/lectureapply/approve", "/api/lectureproposal/apply",
-                        "/api/lectureproposal/update", "/api/lectureproposal/delete", "/api/lectureproposalapply/apply", "/api/lectureproposalapply/cancel/**", "/api/lectureproposalapply/approve",
-                        "/api/lectureproposalapply/close").authenticated()
+                        "/api/lectureproposal/update", "/api/lectureproposal/delete", "/api/lectureproposalapply/apply",
+                        "/api/lectureproposalapply/cancel/**", "/api/lectureproposalapply/approve",
+                        "/api/lectureproposalapply/close",
+                        "/api/mypageApplyLecture/myApplyLectureAll", "/api/mypageApplyLecture/updateLectureApplyReason",
+                        "/api/mypageCreateLecture/myCreateLectureAll",
+                        "/api/myProposalLecture/myProposalAll", "/api/user/delete").authenticated()
                 .anyRequest().authenticated()
                 .and()
                 .httpBasic()

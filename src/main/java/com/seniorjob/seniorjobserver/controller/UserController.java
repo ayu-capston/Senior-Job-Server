@@ -8,7 +8,11 @@ import com.seniorjob.seniorjobserver.service.StorageService;
 import com.seniorjob.seniorjobserver.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -30,6 +34,8 @@ public class UserController {
     private final UserRepository userRepository;
     private final StorageService storageService;
     private final ObjectMapper objectMapper;
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     @Autowired
     public UserController(UserService userService, UserRepository userRepository, PasswordEncoder pwEncoder, StorageService storageService, ObjectMapper objectMapper) {
@@ -41,11 +47,25 @@ public class UserController {
 
     // 구직자/사업주 회원가입API with 암호화 세션
     @PostMapping("/join")
-    public ResponseEntity<?> registerUser(@RequestParam("userDto") String userDtoJson, @RequestParam("file") MultipartFile file) {
+    public ResponseEntity<?> registerUser(
+            @RequestParam("userDto") String userDtoJson,
+            @RequestParam("file") MultipartFile file) {
         try {
             UserDto userDto = objectMapper.readValue(userDtoJson, UserDto.class);
 
             String encryptionCode = userDto.getEncryptionCode();
+            String confirmPassword = userDto.getConfirmPassword();
+
+            // 비밀번호 검증 메서드 호출
+            if (!isValidPassword(encryptionCode)) {
+                return ResponseEntity.badRequest().body("비밀번호는 6~12자리 영문+숫자 1개 이상이어야 합니다.");
+            }
+
+            // 비밀번호 확인 비교
+            if(!encryptionCode.equals(confirmPassword)){
+                return ResponseEntity.badRequest().body("비밀번호가 일치하지 않습니다!!");
+            }
+
             String imageUrl = storageService.uploadImage(file);
             userDto.setImgKey(imageUrl);
 
@@ -57,6 +77,13 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to upload image: " + e.getMessage());
         }
     }
+
+    // 비밀번호 생성 규칙 검증 메서드
+    private boolean isValidPassword(String password) {
+        // 비밀번호는 6~12자리 영문+숫자 1개 이상이어야 함
+        return password.matches("^(?=.*[A-Za-z])(?=.*\\d).{6,12}$");
+    }
+
     // 세션 로그인
     // POST /api/users/login
     @PostMapping("/login")
@@ -140,4 +167,22 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("에러 : " + e.getMessage());
         }
     }
+
+    // 회원탈퇴 API
+    // DELETE /api/user/delete
+    @DeleteMapping("/delete")
+    public ResponseEntity<?> deleteUser(){
+        try {
+           // userService.deleteUser();
+            return ResponseEntity.ok("회원 탈퇴가 정상적으로 완료되었습니다.");
+        }catch (IllegalStateException e){
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
+        }catch (UsernameNotFoundException e){
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }catch (Exception e){
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("오류메시지 : " + e.getMessage());
+        }
+    }
+
 }
